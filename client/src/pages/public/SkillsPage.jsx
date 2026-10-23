@@ -26,7 +26,7 @@ export default function SkillsPage() {
 
   const filtered = skills.filter(s => {
     const matchesSearch = s.name.toLowerCase().includes(search.toLowerCase()) ||
-      s.description.toLowerCase().includes(search.toLowerCase());
+      (s.description || '').toLowerCase().includes(search.toLowerCase());
     const matchesCat = selectedCategory === 'ALL' || s.category === selectedCategory;
     return matchesSearch && matchesCat;
   });

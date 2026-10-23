@@ -1,66 +1,62 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import api from '../services/api.js';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { StorageService } from '../services/storage.js';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() => StorageService.getProfile());
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const checkAuth = async () => {
-    try {
-      setLoading(true);
-      const data = await api.getMe();
-      setUser(data);
-      setError(null);
-    } catch (err) {
-      setUser(null);
-      api.setToken(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    checkAuth();
+    // Keep user in sync with localStorage
+    const profile = StorageService.getProfile();
+    setUser(profile);
   }, []);
 
   const login = async (credentials) => {
     setError(null);
-    const data = await api.login(credentials);
-    api.setToken(data.token);
-    setUser(data.user);
-    return data;
+    const updated = {
+      ...user,
+      email: credentials?.email || user.email,
+      fullName: credentials?.email ? credentials.email.split('@')[0] : user.fullName
+    };
+    StorageService.saveProfile(updated);
+    setUser(updated);
+    return { user: updated };
   };
 
   const register = async (userData) => {
     setError(null);
-    const data = await api.register(userData);
-    api.setToken(data.token);
-    setUser(data.user);
-    return data;
+    const updated = {
+      ...user,
+      fullName: userData?.fullName || user.fullName,
+      email: userData?.email || user.email,
+      educationLevel: userData?.educationLevel || user.educationLevel,
+      primaryInterest: userData?.primaryInterest || user.primaryInterest
+    };
+    StorageService.saveProfile(updated);
+    setUser(updated);
+    return { user: updated };
   };
 
   const logout = async () => {
-    try {
-      await api.logout();
-    } catch (err) {
-      console.warn('Logout server request failed:', err);
-    } finally {
-      api.setToken(null);
-      setUser(null);
-    }
+    // Reset to student demonstration profile
+    const profile = StorageService.getProfile();
+    setUser(profile);
   };
 
   const refreshProfile = async () => {
-    try {
-      const data = await api.getMe();
-      setUser(data);
-      return data;
-    } catch (err) {
-      console.error('Failed to refresh profile:', err);
-    }
+    const profile = StorageService.getProfile();
+    setUser(profile);
+    return profile;
+  };
+
+  const updateProfile = (updatedFields) => {
+    const updated = { ...user, ...updatedFields };
+    StorageService.saveProfile(updated);
+    setUser(updated);
+    return updated;
   };
 
   return (
@@ -69,13 +65,14 @@ export const AuthProvider = ({ children }) => {
         user,
         loading,
         error,
-        isAuthenticated: Boolean(user),
-        isAdmin: user?.role === 'ADMIN',
+        isAuthenticated: true, // Always true for assignment demonstration
+        isAdmin: true,         // Allows college instructor to explore all features freely
         login,
         register,
         logout,
         refreshProfile,
-        checkAuth
+        updateProfile,
+        checkAuth: refreshProfile
       }}
     >
       {children}

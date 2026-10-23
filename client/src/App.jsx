@@ -39,30 +39,12 @@ import ProfileSettingsPage from './pages/student/ProfileSettingsPage.jsx';
 // Admin Page
 import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx';
 
-// Route Guards
+// Route Guards (Direct access for assignment demonstration)
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  return children;
 };
 
 const AdminRoute = ({ children }) => {
-  const { isAuthenticated, isAdmin, loading } = useAuth();
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (!isAdmin) return <Navigate to="/dashboard" replace />;
   return children;
 };
 

@@ -47,7 +47,20 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 glass-card p-8 rounded-3xl shadow-soft-lg border border-borderBase-light dark:border-borderBase-dark">
+      <div className="max-w-md w-full space-y-6 glass-card p-8 rounded-3xl shadow-soft-lg border border-borderBase-light dark:border-borderBase-dark">
+        <div className="p-3.5 rounded-2xl bg-primary-50 dark:bg-primary-950/50 border border-primary-200 dark:border-primary-800 text-center space-y-2">
+          <p className="text-xs font-bold text-primary dark:text-primary-300">
+            🎓 Student Mode Active (No Password Required)
+          </p>
+          <Link
+            to="/dashboard"
+            className="w-full py-2 px-4 rounded-xl text-xs font-bold bg-primary text-white hover:bg-primary-700 shadow-md flex items-center justify-center gap-1.5 transition-transform active:scale-95"
+          >
+            <span>Open Student Workspace Directly</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
         <div className="text-center space-y-2">
           <Link to="/" className="inline-flex items-center gap-2 mb-2 group">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center text-white shadow-md shadow-primary/20">
@@ -58,7 +71,7 @@ export default function LoginPage() {
             Welcome back
           </h2>
           <p className="text-xs sm:text-sm text-textMuted-light dark:text-textMuted-dark">
-            Enter your credentials to access your SkillPath workspace
+            Enter your student details or click above to continue
           </p>
         </div>
 

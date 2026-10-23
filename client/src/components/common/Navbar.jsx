@@ -33,10 +33,10 @@ export default function Navbar() {
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'Explore Careers', path: '/careers' },
-    { name: 'Skills', path: '/skills' },
-    { name: 'Learning Roadmaps', path: '/roadmaps' },
-    { name: 'Projects', path: '/projects' },
-    { name: 'About', path: '/about' }
+    { name: 'Roadmaps', path: '/roadmaps' },
+    { name: 'Skill Quizzes', path: '/dashboard/assessments' },
+    { name: 'Learning Hub', path: '/dashboard/learning' },
+    { name: 'Workspace', path: '/dashboard/projects' }
   ];
 
   const isActive = (path) => {
@@ -57,7 +57,7 @@ export default function Navbar() {
               Skill<span className="text-primary dark:text-primary-400">Path</span>
             </span>
             <span className="text-[10px] text-textMuted-light dark:text-textMuted-dark uppercase tracking-wider font-semibold">
-              Career Engine
+              Student Career Platform
             </span>
           </div>
         </Link>
@@ -90,91 +90,69 @@ export default function Navbar() {
             {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
           </button>
 
-          {isAuthenticated ? (
-            <div className="relative">
-              <button
-                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                className="flex items-center gap-2.5 p-1.5 pl-2.5 rounded-full border border-borderBase-light dark:border-borderBase-dark hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-              >
-                <span className="text-xs font-semibold text-textMain-light dark:text-textMain-dark max-w-[120px] truncate">
-                  {user.fullName || user.email}
-                </span>
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-accent flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                  {user.fullName ? user.fullName[0].toUpperCase() : 'U'}
+          {/* Direct Dashboard CTA */}
+          <Link
+            to="/dashboard"
+            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-primary hover:bg-primary-700 shadow-md shadow-primary/20 transition-all flex items-center gap-1.5"
+          >
+            <LayoutDashboard className="w-3.5 h-3.5" />
+            <span>Dashboard</span>
+          </Link>
+
+          {/* Student Profile Quick Menu */}
+          <div className="relative">
+            <button
+              onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+              className="flex items-center gap-2 p-1.5 pl-2.5 rounded-full border border-borderBase-light dark:border-borderBase-dark hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+            >
+              <span className="text-xs font-semibold text-textMain-light dark:text-textMain-dark max-w-[100px] truncate">
+                {user?.fullName || 'Alex Chen'}
+              </span>
+              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-primary to-accent flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                A
+              </div>
+              <ChevronDown className="w-3.5 h-3.5 text-textMuted-light dark:text-textMuted-dark" />
+            </button>
+
+            {userDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-56 rounded-xl glass-card shadow-soft-lg py-1.5 z-50">
+                <div className="px-4 py-2 border-b border-borderBase-light dark:border-borderBase-dark">
+                  <p className="text-[11px] text-textMuted-light dark:text-textMuted-dark">Student Demo Active</p>
+                  <p className="text-xs font-bold text-textMain-light dark:text-textMain-dark truncate">{user?.fullName || 'Alex Chen'}</p>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300 px-2 py-0.5 rounded-full mt-1">
+                    Student Mode
+                  </span>
                 </div>
-                <ChevronDown className="w-3.5 h-3.5 text-textMuted-light dark:text-textMuted-dark mr-1" />
-              </button>
 
-              {userDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 rounded-xl glass-card shadow-soft-lg py-1.5 z-50">
-                  <div className="px-4 py-2 border-b border-borderBase-light dark:border-borderBase-dark">
-                    <p className="text-xs text-textMuted-light dark:text-textMuted-dark">Signed in as</p>
-                    <p className="text-xs font-bold text-textMain-light dark:text-textMain-dark truncate">{user.email}</p>
-                    {isAdmin && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-primary-100 text-primary-800 dark:bg-primary-900/50 dark:text-primary-300 px-2 py-0.5 rounded-full mt-1">
-                        <Shield className="w-2.5 h-2.5" /> Administrator
-                      </span>
-                    )}
-                  </div>
+                <Link
+                  to="/dashboard"
+                  onClick={() => setUserDropdownOpen(false)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-textMain-light dark:text-textMain-dark hover:bg-primary-50 dark:hover:bg-slate-700/50"
+                >
+                  <LayoutDashboard className="w-4 h-4 text-primary" />
+                  Student Dashboard
+                </Link>
 
-                  <Link
-                    to="/dashboard"
-                    onClick={() => setUserDropdownOpen(false)}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-textMain-light dark:text-textMain-dark hover:bg-primary-50 dark:hover:bg-slate-700/50"
-                  >
-                    <LayoutDashboard className="w-4 h-4 text-primary" />
-                    Student Dashboard
-                  </Link>
+                <Link
+                  to="/dashboard/profile"
+                  onClick={() => setUserDropdownOpen(false)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-textMain-light dark:text-textMain-dark hover:bg-primary-50 dark:hover:bg-slate-700/50"
+                >
+                  <User className="w-4 h-4 text-slate-500" />
+                  Profile & Goals
+                </Link>
 
-                  <Link
-                    to="/dashboard/profile"
-                    onClick={() => setUserDropdownOpen(false)}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-textMain-light dark:text-textMain-dark hover:bg-primary-50 dark:hover:bg-slate-700/50"
-                  >
-                    <User className="w-4 h-4 text-slate-500" />
-                    Profile & Settings
-                  </Link>
-
-                  {isAdmin && (
-                    <Link
-                      to="/admin"
-                      onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-textMain-light dark:text-textMain-dark hover:bg-primary-50 dark:hover:bg-slate-700/50"
-                    >
-                      <Shield className="w-4 h-4 text-secondary" />
-                      Admin Panel
-                    </Link>
-                  )}
-
-                  <div className="border-t border-borderBase-light dark:border-borderBase-dark my-1"></div>
-
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 text-left"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Sign Out
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center gap-2.5">
-              <Link
-                to="/login"
-                className="px-3.5 py-1.5 text-sm font-semibold text-textMain-light dark:text-textMain-dark hover:text-primary transition-colors"
-              >
-                Sign In
-              </Link>
-              <Link
-                to="/register"
-                className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-700 shadow-md shadow-primary/20 transition-all active:scale-95 flex items-center gap-1.5"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                Get Started
-              </Link>
-            </div>
-          )}
+                <Link
+                  to="/admin"
+                  onClick={() => setUserDropdownOpen(false)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-textMain-light dark:text-textMain-dark hover:bg-primary-50 dark:hover:bg-slate-700/50"
+                >
+                  <Shield className="w-4 h-4 text-secondary" />
+                  Admin Overview
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Mobile Menu Button */}

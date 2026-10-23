@@ -49,10 +49,10 @@ export default function LandingPage() {
   ];
 
   const popularAssessments = [
-    { title: 'JavaScript Core Fundamentals', category: 'Frontend', questions: 6, time: '15 min', level: 'Beginner', slug: 'javascript-fundamentals' },
-    { title: 'React & Component Architecture', category: 'Frontend', questions: 5, time: '15 min', level: 'Intermediate', slug: 'react-fundamentals' },
-    { title: 'SQL & Database Architecture', category: 'Data', questions: 4, time: '12 min', level: 'Beginner', slug: 'sql-database-fundamentals' },
-    { title: 'Python Programming Foundations', category: 'Data', questions: 3, time: '12 min', level: 'Beginner', slug: 'python-foundations' }
+    { title: 'JavaScript Core & Async Mastery', category: 'JavaScript', questions: 5, time: '10 min', level: 'Intermediate', slug: 'javascript-core' },
+    { title: 'HTML5 & Modern CSS3 Architecture', category: 'HTML and CSS', questions: 4, time: '8 min', level: 'Beginner', slug: 'html-css' },
+    { title: 'React.js Component Architecture', category: 'React', questions: 4, time: '10 min', level: 'Intermediate', slug: 'react-fundamentals' },
+    { title: 'SQL & Database Modeling', category: 'SQL', questions: 4, time: '10 min', level: 'Intermediate', slug: 'sql-relational' }
   ];
 
   return (
@@ -80,10 +80,10 @@ export default function LandingPage() {
 
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5 pt-2">
               <Link
-                to="/register"
+                to="/dashboard"
                 className="w-full sm:w-auto px-6 py-3.5 rounded-xl text-base font-semibold text-white bg-primary hover:bg-primary-700 shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 active:translate-y-0 text-center flex items-center justify-center gap-2"
               >
-                <span>Build My Career Roadmap</span>
+                <span>Open Student Dashboard</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
@@ -346,10 +346,10 @@ export default function LandingPage() {
             </p>
             <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
-                to="/register"
+                to="/dashboard"
                 className="w-full sm:w-auto px-8 py-3.5 rounded-xl text-base font-bold text-primary bg-white hover:bg-slate-100 shadow-lg transition-transform active:scale-95"
               >
-                Get Started for Free
+                Open Student Workspace
               </Link>
               <Link
                 to="/careers"

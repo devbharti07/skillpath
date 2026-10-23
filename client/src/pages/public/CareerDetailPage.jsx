@@ -94,15 +94,13 @@ export default function CareerDetailPage() {
               <span>{bookmarked ? 'Bookmarked' : 'Bookmark'}</span>
             </button>
 
-            {career.roadmaps?.[0] && (
-              <Link
-                to={`/dashboard/roadmaps/${career.roadmaps[0].slug}`}
-                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-700 shadow-md shadow-primary/20 flex items-center gap-1.5"
-              >
-                <span>Start Roadmap</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            )}
+            <Link
+              to={`/dashboard/roadmaps/${career.roadmapSlug || career.roadmaps?.[0]?.slug || 'frontend-developer'}`}
+              className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-700 shadow-md shadow-primary/20 flex items-center gap-1.5"
+            >
+              <span>Start Roadmap</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
 
@@ -113,13 +111,13 @@ export default function CareerDetailPage() {
         {/* Quick Meta Pills */}
         <div className="flex flex-wrap items-center gap-4 text-xs pt-4 border-t border-borderBase-light dark:border-borderBase-dark">
           <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-textMain-light dark:text-textMain-dark font-medium flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-primary" /> ~{career.estimatedLearningWeeks} Weeks Curriculum
+            <Clock className="w-3.5 h-3.5 text-primary" /> Est. Salary: {career.salaryRange || '$85,000 - $140,000'}
           </span>
           <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-textMain-light dark:text-textMain-dark font-medium">
-            Difficulty: <strong>{career.difficulty}</strong>
+            Level: <strong>{career.level || career.difficulty || 'All Levels'}</strong>
           </span>
           <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-textMain-light dark:text-textMain-dark font-medium">
-            Active Market Track
+            Demand: <strong>{career.marketDemand || 'Very High'}</strong>
           </span>
         </div>
       </div>
@@ -133,7 +131,7 @@ export default function CareerDetailPage() {
             Typical Responsibilities
           </h3>
           <ul className="space-y-2.5 text-xs sm:text-sm text-textMuted-light dark:text-textMuted-dark">
-            {career.responsibilities.map((resp, i) => (
+            {(career.responsibilities || []).map((resp, i) => (
               <li key={i} className="flex items-start gap-2.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
                 <span className="leading-relaxed">{resp}</span>
@@ -150,7 +148,7 @@ export default function CareerDetailPage() {
               Required Technical Skills
             </h3>
             <div className="flex flex-wrap gap-2">
-              {career.technicalSkills.map((sk) => (
+              {(career.requiredSkills || career.technicalSkills || []).map((sk) => (
                 <span key={sk} className="px-3 py-1 rounded-lg text-xs font-semibold bg-primary-50 dark:bg-primary-950/40 text-primary border border-primary-200 dark:border-primary-800">
                   {sk}
                 </span>
@@ -164,7 +162,7 @@ export default function CareerDetailPage() {
               Essential Soft Skills
             </h3>
             <div className="flex flex-wrap gap-2">
-              {career.softSkills.map((sk) => (
+              {(career.softSkills || []).map((sk) => (
                 <span key={sk} className="px-3 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-textMuted-light dark:text-textMuted-dark">
                   {sk}
                 </span>
@@ -174,7 +172,7 @@ export default function CareerDetailPage() {
         </div>
       </div>
 
-      {/* Prerequisites & Example Projects */}
+      {/* Prerequisites & Recommended Projects */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="glass-card p-6 sm:p-8 rounded-3xl space-y-4 border border-borderBase-light dark:border-borderBase-dark">
           <h3 className="font-bold text-base text-textMain-light dark:text-textMain-dark flex items-center gap-2">
@@ -182,7 +180,7 @@ export default function CareerDetailPage() {
             Recommended Prerequisites
           </h3>
           <ul className="space-y-2 text-xs text-textMuted-light dark:text-textMuted-dark">
-            {career.prerequisites.map((p, i) => (
+            {(career.prerequisites || []).map((p, i) => (
               <li key={i} className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-accent" />
                 <span>{p}</span>
@@ -194,45 +192,16 @@ export default function CareerDetailPage() {
         <div className="glass-card p-6 sm:p-8 rounded-3xl space-y-4 border border-borderBase-light dark:border-borderBase-dark">
           <h3 className="font-bold text-base text-textMain-light dark:text-textMain-dark flex items-center gap-2">
             <Layers className="w-4 h-4 text-amber-500" />
-            Proof-of-Work Projects
+            Recommended Portfolio Projects
           </h3>
-          <ul className="space-y-2 text-xs text-textMuted-light dark:text-textMuted-dark">
-            {career.exampleProjects.map((proj, i) => (
-              <li key={i} className="flex items-center gap-2 font-medium text-textMain-light dark:text-textMain-dark">
-                <span className="text-amber-500">★</span>
-                <span>{proj}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      {/* Relevant Assessments & Roadmaps */}
-      <div className="glass-card p-6 sm:p-8 rounded-3xl space-y-6 border border-borderBase-light dark:border-borderBase-dark">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <h3 className="font-bold text-base text-textMain-light dark:text-textMain-dark flex items-center gap-2">
-            <FileCheck2 className="w-4 h-4 text-primary" />
-            Skill Assessments for this Track
-          </h3>
-          <span className="text-xs text-textMuted-light dark:text-textMuted-dark">Verify competencies before applying</span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {career.relevantAssessments.map(a => (
-            <div key={a.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex flex-col justify-between space-y-3">
-              <div>
-                <span className="text-[10px] font-bold text-primary uppercase">{a.difficulty}</span>
-                <h5 className="font-bold text-xs text-textMain-light dark:text-textMain-dark mt-0.5">{a.title}</h5>
-                <span className="text-[11px] text-textMuted-light dark:text-textMuted-dark">{a.durationMinutes} Minutes</span>
+          <div className="space-y-3">
+            {(career.recommendedProjects || []).map((proj, i) => (
+              <div key={i} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                <h4 className="text-xs font-bold text-textMain-light dark:text-textMain-dark">{typeof proj === 'string' ? proj : proj.title}</h4>
+                {proj.description && <p className="text-[11px] text-textMuted-light dark:text-textMuted-dark mt-0.5">{proj.description}</p>}
               </div>
-              <Link
-                to={`/dashboard/assessments/${a.slug}`}
-                className="w-full py-1.5 text-center rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary-700 transition-colors"
-              >
-                Test Skills
-              </Link>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
@@ -243,14 +212,7 @@ export default function CareerDetailPage() {
           Labor Market Context & Transparency Notice
         </h4>
         <p className="text-textMuted-light dark:text-textMuted-dark leading-relaxed">
-          {career.salaryNote}
-        </p>
-        <p className="text-[11px] text-slate-400">
-          Source reference:{' '}
-          <a href={career.sourceUrl || '#'} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
-            <span>U.S. Bureau of Labor Statistics & Industry Benchmark Reports</span>
-            <ExternalLink className="w-3 h-3" />
-          </a>
+          {career.salaryNote || 'Salary ranges and market demand metrics reflect aggregated industry benchmarks from public developer reports (e.g., U.S. BLS and Stack Overflow Developer Survey). Individual compensation varies based on geography, experience, and organization size.'}
         </p>
       </div>
     </div>
