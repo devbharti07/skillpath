@@ -1,0 +1,388 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  fullName      String
+  role          String    @default("STUDENT") // STUDENT or ADMIN
+  avatarUrl     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  profile       UserProfile?
+  userSkills    UserSkill[]
+  attempts      AssessmentAttempt[]
+  roadmaps      UserRoadmap[]
+  projects      UserProject[]
+  goals         Goal[]
+  tasks         Task[]
+  achievements  Achievement[]
+  notifications Notification[]
+  bookmarks     Bookmark[]
+  conversations AIConversation[]
+}
+
+model UserProfile {
+  id                      String    @id @default(uuid())
+  userId                  String    @unique
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  educationLevel          String?
+  primaryCareerInterest   String?
+  bio                     String?
+  technicalSkills         String?   // JSON string of skill names
+  softSkills              String?   // JSON string of soft skills
+  topicsEnjoyed           String?   // JSON string of interests
+  preferredCareers        String?   // JSON string of preferred careers
+  proficiencyLevel        String?   @default("BEGINNER")
+  weeklyAvailabilityHours Int       @default(10)
+  shortTermGoals          String?
+  longTermGoals           String?
+  portfolioWebsite        String?
+  githubUrl               String?
+  linkedinUrl             String?
+  isPublic                Boolean   @default(true)
+  onboardingCompleted     Boolean   @default(false)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+}
+
+model Skill {
+  id          String        @id @default(uuid())
+  name        String        @unique
+  slug        String        @unique
+  category    String        // Frontend, Backend, Data, Cloud, Design, Core
+  description String
+  icon        String?       // Lucide icon name
+  isCore      Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  careerSkills CareerSkill[]
+  userSkills   UserSkill[]
+}
+
+model Career {
+  id                     String        @id @default(uuid())
+  slug                   String        @unique
+  title                  String
+  category               String        // Engineering, Data, Cloud, Design, Product
+  description            String
+  responsibilities       String        // JSON array of responsibilities
+  technicalSkills        String        // JSON array of skill strings
+  softSkills             String        // JSON array of soft skills
+  prerequisites          String        // JSON array of prerequisites
+  difficulty             String        // Beginner, Intermediate, Advanced
+  estimatedLearningWeeks Int           @default(24)
+  exampleProjects        String        // JSON array of example projects
+  salaryNote             String?       // Market context with sourced disclaimer
+  marketOutlook          String?
+  sourceUrl              String?
+  isPublished            Boolean       @default(true)
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  skills                 CareerSkill[]
+  roadmaps               Roadmap[]
+}
+
+model CareerSkill {
+  id              String   @id @default(uuid())
+  careerId        String
+  career          Career   @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  skillId         String
+  skill           Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  isRequired      Boolean  @default(true)
+  importanceLevel String   @default("HIGH") // HIGH, MEDIUM, NICE_TO_HAVE
+
+  @@unique([careerId, skillId])
+}
+
+model UserSkill {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skillId     String
+  skill       Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  proficiency String   @default("BEGINNER") // BEGINNER, INTERMEDIATE, ADVANCED
+  isVerified  Boolean  @default(false)
+  score       Int?     // score from assessment if verified
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, skillId])
+}
+
+model Assessment {
+  id                 String              @id @default(uuid())
+  slug               String              @unique
+  title              String
+  category           String
+  difficulty         String              @default("BEGINNER") // BEGINNER, INTERMEDIATE, ADVANCED
+  durationMinutes    Int                 @default(15)
+  passingScorePercent Int                @default(60)
+  description        String
+  instructions       String
+  isPublished        Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  questions          Question[]
+  attempts           AssessmentAttempt[]
+}
+
+model Question {
+  id           String         @id @default(uuid())
+  assessmentId String
+  assessment   Assessment     @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  questionText String
+  explanation  String?
+  orderIndex   Int            @default(0)
+  createdAt    DateTime       @default(now())
+
+  options      AnswerOption[]
+  responses    AssessmentResponse[]
+}
+
+model AnswerOption {
+  id         String     @id @default(uuid())
+  questionId String
+  question   Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  optionText String
+  isCorrect  Boolean    @default(false)
+  orderIndex Int        @default(0)
+
+  responses  AssessmentResponse[]
+}
+
+model AssessmentAttempt {
+  id                String               @id @default(uuid())
+  assessmentId      String
+  assessment        Assessment           @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scorePercent      Int
+  totalQuestions    Int
+  correctAnswers    Int
+  proficiencyResult String               // BEGINNER, INTERMEDIATE, ADVANCED, PROVISIONAL
+  timeSpentSeconds  Int                  @default(0)
+  completedAt       DateTime             @default(now())
+  createdAt         DateTime             @default(now())
+
+  responses         AssessmentResponse[]
+}
+
+model AssessmentResponse {
+  id               String            @id @default(uuid())
+  attemptId        String
+  attempt          AssessmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId       String
+  question         Question          @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedOptionId String
+  selectedOption   AnswerOption      @relation(fields: [selectedOptionId], references: [id], onDelete: Cascade)
+  isCorrect        Boolean
+}
+
+model Roadmap {
+  id            String         @id @default(uuid())
+  slug          String         @unique
+  title         String
+  careerId      String?
+  career        Career?        @relation(fields: [careerId], references: [id], onDelete: SetNull)
+  description   String
+  durationWeeks Int            @default(16)
+  level         String         @default("BEGINNER")
+  isPublished   Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  phases        RoadmapPhase[]
+  userRoadmaps  UserRoadmap[]
+}
+
+model RoadmapPhase {
+  id          String        @id @default(uuid())
+  roadmapId   String
+  roadmap     Roadmap       @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  phaseNumber Int
+  title       String
+  description String
+  items       RoadmapItem[]
+}
+
+model RoadmapItem {
+  id                 String                @id @default(uuid())
+  phaseId            String
+  phase              RoadmapPhase          @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  title              String
+  description        String
+  estimatedHours     Int                   @default(5)
+  orderIndex         Int                   @default(0)
+  learningResources  String?               // JSON array of recommended resource links
+  completionCriteria String?
+  userProgress       UserRoadmapProgress[]
+}
+
+model UserRoadmap {
+  id                   String                @id @default(uuid())
+  userId               String
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roadmapId            String
+  roadmap              Roadmap               @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  status               String                @default("ACTIVE") // ACTIVE, PAUSED, COMPLETED
+  targetCompletionDate DateTime?
+  weeklyHours          Int                   @default(10)
+  progressPercent      Int                   @default(0)
+  notes                String?
+  startedAt            DateTime              @default(now())
+  completedAt          DateTime?
+  updatedAt            DateTime              @updatedAt
+
+  progress             UserRoadmapProgress[]
+  tasks                Task[]
+
+  @@unique([userId, roadmapId])
+}
+
+model UserRoadmapProgress {
+  id            String      @id @default(uuid())
+  userRoadmapId String
+  userRoadmap   UserRoadmap @relation(fields: [userRoadmapId], references: [id], onDelete: Cascade)
+  itemId        String
+  item          RoadmapItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  completed     Boolean     @default(false)
+  completedAt   DateTime?
+
+  @@unique([userRoadmapId, itemId])
+}
+
+model LearningResource {
+  id              String   @id @default(uuid())
+  title           String
+  description     String
+  category        String   // Web, Data, AI, Cloud, Design, Foundations
+  type            String   // ARTICLE, DOCS, TUTORIAL, VIDEO, EXERCISE, PROJECT
+  difficulty      String   @default("BEGINNER") // BEGINNER, INTERMEDIATE, ADVANCED
+  durationMinutes Int      @default(30)
+  url             String
+  isPublished     Boolean  @default(true)
+  createdAt       DateTime @default(now())
+}
+
+model Bookmark {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemType  String   // CAREER, RESOURCE, ROADMAP
+  itemId    String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, itemType, itemId])
+}
+
+model Project {
+  id                 String        @id @default(uuid())
+  title              String
+  slug               String        @unique
+  description        String
+  category           String
+  difficulty         String        @default("BEGINNER")
+  learningObjectives String        // JSON array of strings
+  milestones         String        // JSON array of milestone objects
+  suggestedTech      String        // JSON array of strings
+  isTemplate         Boolean       @default(true)
+  createdAt          DateTime      @default(now())
+
+  userProjects       UserProject[]
+}
+
+model UserProject {
+  id                 String    @id @default(uuid())
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId          String?
+  project            Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  title              String
+  description        String
+  category           String    @default("Web Development")
+  difficulty         String    @default("BEGINNER")
+  status             String    @default("NOT_STARTED") // NOT_STARTED, IN_PROGRESS, COMPLETED
+  repoUrl            String?
+  demoUrl            String?
+  notes              String?
+  milestonesProgress String?   // JSON object tracking completed milestones
+  startedAt          DateTime  @default(now())
+  completedAt        DateTime?
+  updatedAt          DateTime  @updatedAt
+}
+
+model Goal {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  targetDate  DateTime?
+  category    String    @default("CAREER")
+  isCompleted Boolean   @default(false)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tasks       Task[]
+}
+
+model Task {
+  id            String       @id @default(uuid())
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goalId        String?
+  goal          Goal?        @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  userRoadmapId String?
+  userRoadmap   UserRoadmap? @relation(fields: [userRoadmapId], references: [id], onDelete: SetNull)
+  title         String
+  priority      String       @default("MEDIUM") // LOW, MEDIUM, HIGH
+  status        String       @default("TODO")   // TODO, IN_PROGRESS, COMPLETED
+  dueDate       DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Achievement {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  badgeIcon   String   // icon name or badge code
+  category    String   // ASSESSMENT, ROADMAP, PROJECT, STREAK, SPECIAL
+  unlockedAt  DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("SYSTEM") // SYSTEM, ASSESSMENT, ROADMAP, GOAL
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AIConversation {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   // USER or ASSISTANT
+  content   String
+  createdAt DateTime @default(now())
+}
