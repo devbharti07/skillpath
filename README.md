@@ -178,3 +178,52 @@ cd c:/skillpath/client
 npm run build
 ```
 Built assets will be emitted to `client/dist/`.
+
+---
+
+## ☁️ Production Deployment (Vercel & Cloud)
+
+### 1. Frontend on Vercel
+SkillPath is configured for seamless deployment on Vercel:
+- **Framework Preset:** Vite
+- **Root Directory:** `client`
+- **Build Command:** `npm run build`
+- **Output Directory:** `dist`
+- **Routing:** Handled via `client/vercel.json` with SPA rewrites (`/(.*) -> /index.html`), preventing 404s on direct page reloads.
+
+#### Environment Variables for Frontend on Vercel:
+| Variable | Value | Description |
+|---|---|---|
+| `VITE_API_URL` | `https://your-api-domain.com/api` | The public base URL of your deployed backend REST API |
+
+### 2. Backend REST API Deployment
+The Express.js REST API (`server/`) can be hosted on any persistent Node.js environment (e.g. Render, Railway, Fly.io, AWS ECS/Lightsail, or DigitalOcean App Platform):
+- **Build Command:** `npm install && npx prisma generate`
+- **Start Command:** `node src/server.js`
+- **Health Check Path:** `/api/health`
+
+#### Environment Variables for Backend:
+| Variable | Description |
+|---|---|
+| `NODE_ENV` | Set to `production` |
+| `PORT` | Set automatically by cloud host (defaults to `5000`) |
+| `DATABASE_URL` | PostgreSQL connection string (`postgresql://user:pass@host:5432/dbname?sslmode=require`) |
+| `JWT_SECRET` | Secure cryptographic secret string (32+ characters) |
+| `CLIENT_URL` | Deployed Vercel frontend domain (e.g. `https://skillpath.vercel.app`) |
+| `AI_API_KEY` | *(Optional)* Google Gemini API key for live LLM career assistant queries |
+
+### 3. Production Database Setup
+1. Provision a PostgreSQL instance on Neon, Supabase, Railway, or AWS RDS.
+2. Update `server/prisma/schema.prisma` datasource provider to `postgresql`:
+   ```prisma
+   datasource db {
+     provider = "postgresql"
+     url      = env("DATABASE_URL")
+   }
+   ```
+3. Run schema push and seed:
+   ```bash
+   cd server
+   npx prisma db push
+   node prisma/seed.js
+   ```

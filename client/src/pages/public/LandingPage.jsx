@@ -18,7 +18,8 @@ import {
   Terminal,
   Database,
   Layout,
-  ExternalLink
+  ExternalLink,
+  FolderGit2
 } from 'lucide-react';
 
 export default function LandingPage() {
