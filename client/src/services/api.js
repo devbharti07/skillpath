@@ -1,11 +1,33 @@
 // SkillPath Central Client Service
-// Self-contained client-side architecture with local storage persistence and curated data modules
+// Robust client-side architecture with local storage persistence and curated data modules
 
 import { careersData, getCareerBySlug } from '../data/careersData.js';
 import { assessmentsData, getAssessmentBySlug, calculateAssessmentScore } from '../data/assessmentsData.js';
 import { roadmapsData, getRoadmapBySlug } from '../data/roadmapsData.js';
 import { resourcesData } from '../data/resourcesData.js';
 import { StorageService } from './storage.js';
+
+// Helper to format a career object consistently with both new and legacy property names
+function formatCareer(c, bookmarks = []) {
+  if (!c) return null;
+  const isBookmarked = bookmarks.includes(c.id);
+  const technicalSkills = c.requiredSkills || c.technicalSkills || [];
+  const level = c.level || c.difficulty || 'All Levels';
+  const exampleProjects = (c.recommendedProjects || []).map((p) => (typeof p === 'string' ? p : p.title));
+
+  return {
+    ...c,
+    level,
+    difficulty: level,
+    requiredSkills: technicalSkills,
+    technicalSkills,
+    prerequisites: c.prerequisites || ['Basic computer literacy', 'Logical thinking'],
+    exampleProjects,
+    recommendedProjects: c.recommendedProjects || [],
+    estimatedLearningWeeks: c.estimatedLearningWeeks || 24,
+    isBookmarked
+  };
+}
 
 class ApiClient {
   constructor() {
@@ -34,7 +56,8 @@ class ApiClient {
       fullName: userData?.fullName || profile.fullName,
       email: userData?.email || profile.email,
       educationLevel: userData?.educationLevel || profile.educationLevel,
-      primaryInterest: userData?.primaryInterest || profile.primaryInterest
+      primaryInterest: userData?.primaryCareerInterest || userData?.primaryInterest || profile.primaryInterest,
+      primaryCareerInterest: userData?.primaryCareerInterest || userData?.primaryInterest || profile.primaryCareerInterest
     };
     StorageService.saveProfile(updated);
     return { token: 'demo-student-token', user: updated };
@@ -81,20 +104,57 @@ class ApiClient {
 
   async saveOnboarding(data) {
     const current = StorageService.getProfile();
+    const targetCareer = data.preferredCareers?.[0] || 'Frontend Developer';
     const updated = {
       ...current,
       ...data,
+      targetRole: targetCareer,
+      primaryCareerInterest: targetCareer,
       onboardingCompleted: true
     };
     StorageService.saveProfile(updated);
+
+    const verifiedSkills = StorageService.getVerifiedSkills();
+    const verifiedNames = verifiedSkills.map((s) => s.title || s.category);
+
+    const discoverySummary = {
+      topCareerSuggestions: [
+        {
+          id: 'c-1',
+          title: targetCareer,
+          matchScore: 94,
+          category: 'Engineering',
+          summary: `High alignment with your selected interests in ${data.technicalSkills?.slice(0, 3).join(', ') || 'Web Development'}.`
+        },
+        {
+          id: 'c-2',
+          title: 'Full-Stack Developer',
+          matchScore: 88,
+          category: 'Engineering',
+          summary: 'Excellent growth path combining frontend component architecture with scalable server-side systems.'
+        },
+        {
+          id: 'c-3',
+          title: 'UI/UX Engineer',
+          matchScore: 82,
+          category: 'Design',
+          summary: 'Natural progression for developers focused on design systems, visual fidelity, and accessibility.'
+        }
+      ],
+      selfReportedSkills: data.technicalSkills || ['JavaScript', 'HTML & CSS'],
+      untestedSkillsNotice: 'Self-reported competencies provide an initial discovery baseline. Complete diagnostic evaluations in Skill Assessments to confirm your verified credentials.',
+      verifiedSkillsConfirmedByAssessment: verifiedNames
+    };
+
     return {
       success: true,
       summary: {
-        recommendedCareer: 'Frontend Developer',
-        matchScore: 92,
+        recommendedCareer: targetCareer,
+        matchScore: 94,
         suggestedRoadmap: 'frontend-developer',
-        skillsConfirmed: StorageService.getVerifiedSkills().map((s) => s.category)
-      }
+        skillsConfirmed: verifiedNames
+      },
+      discoverySummary
     };
   }
 
@@ -111,20 +171,19 @@ class ApiClient {
     // Calculate active roadmaps with completion percentages
     const activeRoadmaps = roadmapsData.map((rm) => {
       const completedIds = allRoadmaps[rm.slug] || [];
-      const pct = Math.round((completedIds.length / rm.topics.length) * 100);
+      const pct = rm.topics?.length ? Math.round((completedIds.length / rm.topics.length) * 100) : 0;
       return {
         id: rm.id,
         slug: rm.slug,
         title: rm.title,
         careerTitle: rm.careerTitle,
-        totalTopics: rm.topics.length,
+        totalTopics: rm.topics?.length || 10,
         completedTopics: completedIds.length,
         progressPercent: pct
       };
     }).filter((rm) => rm.completedTopics > 0);
 
-    const completedProjectsCount = projects.filter((p) => p.status === 'Completed').length;
-    const completedTasksToday = tasks.filter((t) => t.completed).length;
+    const completedProjectsCount = projects.filter((p) => p.status === 'COMPLETED').length;
 
     const summaryCards = {
       skillsAssessed: verified.length,
@@ -138,15 +197,35 @@ class ApiClient {
     const todaysTasks = tasks.map((t) => ({
       id: t.id,
       title: t.title,
-      status: t.completed ? 'COMPLETED' : 'TODO',
+      completed: Boolean(t.completed || t.status === 'COMPLETED'),
+      status: (t.completed || t.status === 'COMPLETED') ? 'COMPLETED' : 'TODO',
       goal: { title: 'Frontend Mastery' },
-      priority: t.priority
+      priority: (t.priority || 'MEDIUM').toUpperCase()
     }));
+
+    const weeklyActivity = [
+      { day: 'Mon', hours: 2.5, actualHours: 2.5, targetHours: 3.0, tasksCompleted: 2 },
+      { day: 'Tue', hours: 3.0, actualHours: 3.0, targetHours: 3.0, tasksCompleted: 3 },
+      { day: 'Wed', hours: 1.5, actualHours: 1.5, targetHours: 3.0, tasksCompleted: 1 },
+      { day: 'Thu', hours: 4.0, actualHours: 4.0, targetHours: 3.0, tasksCompleted: 4 },
+      { day: 'Fri', hours: 2.0, actualHours: 2.0, targetHours: 3.0, tasksCompleted: 2 },
+      { day: 'Sat', hours: 3.5, actualHours: 3.5, targetHours: 3.0, tasksCompleted: 3 },
+      { day: 'Sun', hours: 1.0, actualHours: 1.0, targetHours: 3.0, tasksCompleted: 1 }
+    ];
+
+    const skillsChartData = [
+      { skill: 'JavaScript', category: 'JavaScript', proficiency: 85, proficiencyScore: 85 },
+      { skill: 'React', category: 'React', proficiency: 75, proficiencyScore: 75 },
+      { skill: 'CSS/HTML', category: 'CSS/HTML', proficiency: 90, proficiencyScore: 90 },
+      { skill: 'Node.js', category: 'Node.js', proficiency: 70, proficiencyScore: 70 },
+      { skill: 'SQL', category: 'SQL', proficiency: 65, proficiencyScore: 65 },
+      { skill: 'Python', category: 'Python', proficiency: 60, proficiencyScore: 60 }
+    ];
 
     return {
       profile,
       studentGreeting: `Welcome back, ${profile.fullName}!`,
-      currentCareerGoal: profile.targetRole || 'Full-Stack Developer',
+      currentCareerGoal: profile.targetRole || profile.primaryCareerInterest || 'Full-Stack Developer',
       summaryCards,
       summary: summaryCards,
       continueLearning: {
@@ -162,27 +241,12 @@ class ApiClient {
       recentAssessments: attempts.slice(0, 4),
       recentProjects: projects.slice(0, 3),
       recommendedSkills: [
-        { name: 'React Custom Hooks', reason: 'High demand in Frontend & Full-Stack roles' },
-        { name: 'SQL Window Functions & Aggregations', reason: 'Essential for data querying and backend optimization' },
-        { name: 'TypeScript Interface Patterns', reason: 'Adopted across 80% of modern software teams' }
+        { id: 'rec-1', name: 'React Custom Hooks', reason: 'High demand in Frontend & Full-Stack roles' },
+        { id: 'rec-2', name: 'SQL Window Functions & Aggregations', reason: 'Essential for data querying and backend optimization' },
+        { id: 'rec-3', name: 'TypeScript Interface Patterns', reason: 'Adopted across 80% of modern software teams' }
       ],
-      weeklyActivity: [
-        { day: 'Mon', hours: 2.5, tasksCompleted: 2 },
-        { day: 'Tue', hours: 3.0, tasksCompleted: 3 },
-        { day: 'Wed', hours: 1.5, tasksCompleted: 1 },
-        { day: 'Thu', hours: 4.0, tasksCompleted: 4 },
-        { day: 'Fri', hours: 2.0, tasksCompleted: 2 },
-        { day: 'Sat', hours: 3.5, tasksCompleted: 3 },
-        { day: 'Sun', hours: 1.0, tasksCompleted: 1 }
-      ],
-      skillsChartData: [
-        { skill: 'JavaScript', proficiency: 85 },
-        { skill: 'React', proficiency: 75 },
-        { skill: 'CSS/HTML', proficiency: 90 },
-        { skill: 'Node.js', proficiency: 70 },
-        { skill: 'SQL', proficiency: 65 },
-        { skill: 'Python', proficiency: 60 }
-      ],
+      weeklyActivity,
+      skillsChartData,
       recentAchievements: [
         { id: 'ach-1', title: 'Speed Coder', description: 'Completed first skill assessment with 80%+ accuracy.' },
         { id: 'ach-2', title: 'Roadmap Milestone', description: 'Reached 70% progress on Frontend Developer track.' },
@@ -197,21 +261,50 @@ class ApiClient {
     const verifiedCategories = attempts.filter((a) => a.isVerified).map((a) => a.category);
 
     const allSkills = [
-      { id: 'sk-1', name: 'JavaScript (ES6+)', category: 'Frontend', level: 'Advanced', verified: verifiedCategories.includes('JavaScript') },
-      { id: 'sk-2', name: 'React.js Architecture', category: 'Frontend', level: 'Intermediate', verified: verifiedCategories.includes('React') },
-      { id: 'sk-3', name: 'HTML5 & CSS3 Flexbox/Grid', category: 'Frontend', level: 'Advanced', verified: verifiedCategories.includes('HTML and CSS') },
-      { id: 'sk-4', name: 'Node.js & Express REST APIs', category: 'Backend', level: 'Intermediate', verified: true },
-      { id: 'sk-5', name: 'SQL & Database Modeling', category: 'Database', level: 'Intermediate', verified: verifiedCategories.includes('SQL') },
-      { id: 'sk-6', name: 'Python Programming', category: 'Data & AI', level: 'Beginner', verified: verifiedCategories.includes('Python') },
-      { id: 'sk-7', name: 'Git, GitHub & Version Control', category: 'Tools', level: 'Intermediate', verified: true },
-      { id: 'sk-8', name: 'Tailwind CSS Design Systems', category: 'Frontend', level: 'Advanced', verified: true },
-      { id: 'sk-9', name: 'Logical Reasoning & Algorithms', category: 'Computer Science', level: 'Intermediate', verified: verifiedCategories.includes('Logical Reasoning') }
+      { id: 'sk-1', name: 'JavaScript (ES6+)', category: 'Frontend', level: 'Advanced', isCore: true, verified: verifiedCategories.includes('JavaScript') },
+      { id: 'sk-2', name: 'React.js Architecture', category: 'Frontend', level: 'Intermediate', isCore: true, verified: verifiedCategories.includes('React') },
+      { id: 'sk-3', name: 'HTML5 & CSS3 Flexbox/Grid', category: 'Frontend', level: 'Advanced', isCore: true, verified: verifiedCategories.includes('HTML and CSS') },
+      { id: 'sk-4', name: 'Node.js & Express REST APIs', category: 'Backend', level: 'Intermediate', isCore: true, verified: true },
+      { id: 'sk-5', name: 'SQL & Database Modeling', category: 'Database', level: 'Intermediate', isCore: true, verified: verifiedCategories.includes('SQL') },
+      { id: 'sk-6', name: 'Python Programming', category: 'Data', level: 'Beginner', isCore: false, verified: verifiedCategories.includes('Python') },
+      { id: 'sk-7', name: 'Git, GitHub & Version Control', category: 'Core', level: 'Intermediate', isCore: true, verified: true },
+      { id: 'sk-8', name: 'Tailwind CSS Design Systems', category: 'Frontend', level: 'Advanced', isCore: false, verified: true },
+      { id: 'sk-9', name: 'Logical Reasoning & Algorithms', category: 'Core', level: 'Intermediate', isCore: true, verified: verifiedCategories.includes('Logical Reasoning') }
     ];
     return allSkills;
   }
 
   async getMySkills() {
-    return this.getSkills();
+    const skills = await this.getSkills();
+    const userSkills = skills.map((sk) => ({
+      id: sk.id,
+      skillId: sk.id,
+      skill: {
+        id: sk.id,
+        name: sk.name,
+        category: sk.category,
+        level: sk.level,
+        description: `Proficiency in modern industry patterns for ${sk.name}.`
+      },
+      name: sk.name,
+      category: sk.category,
+      level: sk.level,
+      isVerified: Boolean(sk.verified),
+      verified: Boolean(sk.verified)
+    }));
+
+    const verifiedCount = userSkills.filter((s) => s.isVerified).length;
+    const stats = {
+      total: userSkills.length,
+      verifiedCount,
+      provisionalCount: userSkills.length - verifiedCount
+    };
+
+    return {
+      userSkills,
+      skills: userSkills,
+      stats
+    };
   }
 
   async addOrUpdateUserSkill(data) {
@@ -225,54 +318,76 @@ class ApiClient {
   // Careers (All 10 Careers)
   async getCareers() {
     const bookmarks = StorageService.getBookmarks();
-    return careersData.map((c) => ({
-      ...c,
-      isBookmarked: bookmarks.includes(c.id)
-    }));
+    return careersData.map((c) => formatCareer(c, bookmarks));
   }
 
   async getCareer(slug) {
-    const career = getCareerBySlug(slug);
+    const career = getCareerBySlug(slug) || careersData.find((c) => c.slug === slug || c.id === slug);
     if (!career) return null;
     const bookmarks = StorageService.getBookmarks();
-    return {
-      ...career,
-      isBookmarked: bookmarks.includes(career.id)
-    };
+    return formatCareer(career, bookmarks);
   }
 
   async compareCareers(slugsOrIds = []) {
-    return careersData.filter((c) => slugsOrIds.includes(c.slug) || slugsOrIds.includes(c.id));
+    const bookmarks = StorageService.getBookmarks();
+    const targets = Array.isArray(slugsOrIds) && slugsOrIds.length > 0
+      ? slugsOrIds
+      : ['frontend-developer', 'backend-developer'];
+
+    const matched = careersData
+      .filter((c) => targets.includes(c.slug) || targets.includes(c.id))
+      .map((c) => formatCareer(c, bookmarks));
+
+    const finalCareers = matched.length >= 2 ? matched : careersData.slice(0, 2).map((c) => formatCareer(c, bookmarks));
+
+    return {
+      careers: finalCareers,
+      comparisonInsights: {
+        commonSkills: ['Git & GitHub', 'RESTful APIs', 'Problem Solving', 'Data Modeling', 'Communication']
+      }
+    };
   }
 
-  // Roadmaps (Interactive 10-Milestone Curriculum)
+  // Roadmaps (Interactive Curriculum)
   async getRoadmaps() {
     const allProgress = StorageService.getAllRoadmapsProgress();
     return roadmapsData.map((rm) => {
       const completed = allProgress[rm.slug] || [];
-      const progressPercent = Math.round((completed.length / rm.topics.length) * 100);
+      const totalTopics = rm.topics?.length || 10;
+      const progressPercent = Math.round((completed.length / totalTopics) * 100);
       return {
         ...rm,
+        totalPhases: 4,
+        totalItems: totalTopics,
+        durationWeeks: 24,
+        level: rm.level || 'Comprehensive Track',
         completedTopicsCount: completed.length,
         progressPercent,
-        isEnrolled: true
+        status: progressPercent === 100 ? 'Completed' : progressPercent > 0 ? 'In Progress' : 'Active',
+        weeklyHours: 12,
+        isEnrolled: true,
+        career: {
+          category: 'Engineering'
+        }
       };
     });
   }
 
   async getRoadmap(slug) {
-    const roadmap = getRoadmapBySlug(slug);
-    const completedTopicIds = StorageService.getRoadmapCompletedTopics(slug);
-    const progressPercent = Math.round((completedTopicIds.length / roadmap.topics.length) * 100);
+    const roadmap = getRoadmapBySlug(slug) || roadmapsData[0];
+    const completedTopicIds = StorageService.getRoadmapCompletedTopics(roadmap.slug);
+    const totalTopics = roadmap.topics?.length || 10;
+    const progressPercent = Math.round((completedTopicIds.length / totalTopics) * 100);
 
     const enrichedTopics = roadmap.topics.map((t) => ({
       ...t,
       isCompleted: completedTopicIds.includes(t.id),
       completed: completedTopicIds.includes(t.id),
-      resourceUrl: t.resourceLink
+      estimatedHours: t.estimatedHours || 6,
+      resourceUrl: t.resourceLink || 'https://developer.mozilla.org',
+      learningResources: [t.resourceLink || 'https://developer.mozilla.org']
     }));
 
-    // Group 10 topics into 4 logical phases
     const phases = [
       {
         id: `${roadmap.id}-p1`,
@@ -306,6 +421,9 @@ class ApiClient {
 
     return {
       ...roadmap,
+      totalPhases: 4,
+      totalItems: totalTopics,
+      durationWeeks: 24,
       topics: enrichedTopics,
       phases,
       completedTopicIds,
@@ -335,7 +453,8 @@ class ApiClient {
 
     const updatedCompleted = StorageService.toggleRoadmapTopic(targetSlug, targetId);
     const roadmap = getRoadmapBySlug(targetSlug);
-    const progressPercent = Math.round((updatedCompleted.length / (roadmap?.topics?.length || 10)) * 100);
+    const totalTopics = roadmap?.topics?.length || 10;
+    const progressPercent = Math.round((updatedCompleted.length / totalTopics) * 100);
 
     return {
       success: true,
@@ -353,18 +472,29 @@ class ApiClient {
     const attempts = StorageService.getAssessmentAttempts();
     return assessmentsData.map((a) => {
       const pastAttempt = attempts.find((att) => att.assessmentSlug === a.slug);
+      const score = pastAttempt ? pastAttempt.scorePercent : null;
+      const passingScore = a.passingScorePercent || 60;
+
       return {
         ...a,
-        totalQuestions: a.questions.length,
+        totalQuestions: a.questions?.length || 5,
+        durationMinutes: a.durationMinutes || 10,
+        difficulty: a.difficulty || 'Intermediate',
+        passingScorePercent: passingScore,
         hasAttempted: Boolean(pastAttempt),
-        lastScore: pastAttempt ? pastAttempt.percentage : null,
-        proficiency: pastAttempt ? pastAttempt.proficiency : 'Not Tested'
+        lastScore: score,
+        proficiency: pastAttempt ? pastAttempt.proficiencyResult : 'Not Tested',
+        lastAttempt: pastAttempt ? {
+          scorePercent: score,
+          proficiencyResult: pastAttempt.proficiencyResult,
+          passed: score >= passingScore
+        } : null
       };
     });
   }
 
   async getAssessment(slug) {
-    const assessment = getAssessmentBySlug(slug) || assessmentsData.find(a => a.id === slug) || assessmentsData[0];
+    const assessment = getAssessmentBySlug(slug) || assessmentsData.find((a) => a.id === slug) || assessmentsData[0];
     if (!assessment) return null;
 
     const formattedQuestions = assessment.questions.map((q) => ({
@@ -381,6 +511,7 @@ class ApiClient {
 
     return {
       ...assessment,
+      durationMinutes: assessment.durationMinutes || 10,
       totalQuestions: formattedQuestions.length,
       questions: formattedQuestions
     };
@@ -388,13 +519,12 @@ class ApiClient {
 
   async submitAssessment(data) {
     const slug = data.slug || data.assessmentSlug || (data.assessmentId ? data.assessmentId.replace('assessment-', '') : null);
-    let assessment = getAssessmentBySlug(slug) || assessmentsData.find(a => a.id === data.assessmentId) || assessmentsData[0];
+    const assessment = getAssessmentBySlug(slug) || assessmentsData.find((a) => a.id === data.assessmentId) || assessmentsData[0];
 
     // Normalize responses or answers map
     const userAnswers = {};
     if (Array.isArray(data.responses)) {
-      data.responses.forEach(r => {
-        // extract option index from id format "qId-opt-X" or string
+      data.responses.forEach((r) => {
         const match = typeof r.selectedOptionId === 'string' ? r.selectedOptionId.match(/opt-(\d+)/) : null;
         userAnswers[r.questionId] = match ? parseInt(match[1], 10) : r.selectedOptionId;
       });
@@ -407,11 +537,17 @@ class ApiClient {
 
     const calculated = calculateAssessmentScore(assessment, userAnswers);
 
-    const questionReview = assessment.questions.map((q, idx) => {
+    const questionReview = assessment.questions.map((q) => {
       const selectedIndex = userAnswers[q.id];
       const isCorrect = selectedIndex === q.correctIndex;
       const yourAnswer = selectedIndex !== undefined ? q.options[selectedIndex] : 'Not Answered';
       const correctAnswer = q.options[q.correctIndex];
+
+      const options = q.options.map((optText, optIdx) => ({
+        id: `${q.id}-opt-${optIdx}`,
+        optionText: optText,
+        isCorrect: optIdx === q.correctIndex
+      }));
 
       return {
         questionId: q.id,
@@ -419,14 +555,18 @@ class ApiClient {
         isCorrect,
         yourAnswer,
         correctAnswer,
-        explanation: q.explanation
+        selectedOptionId: selectedIndex !== undefined ? `${q.id}-opt-${selectedIndex}` : null,
+        options,
+        explanation: q.explanation || 'Verified with core conceptual execution flow.'
       };
     });
 
     const result = {
+      id: `att-${Date.now()}`,
       assessmentId: assessment.id,
       assessmentSlug: assessment.slug,
       title: assessment.title,
+      assessmentTitle: assessment.title,
       category: assessment.category,
       scorePercent: calculated.percentage,
       percentage: calculated.percentage,
@@ -437,6 +577,7 @@ class ApiClient {
       totalQuestions: assessment.questions.length,
       passed: calculated.percentage >= 60,
       isVerified: calculated.isVerified,
+      completedAt: new Date().toISOString(),
       disclaimer: 'Score reflects standardized conceptual and syntax comprehension. Verified credentials remain active in your student profile.',
       strongAreas: calculated.percentage >= 60
         ? ['Core Syntax & Execution Flow', 'Structural Conceptual Principles', 'Standard Library Patterns']
@@ -444,8 +585,39 @@ class ApiClient {
       areasForImprovement: calculated.percentage >= 80
         ? ['Edge-Case Optimization']
         : ['Asynchronous State Lifecycles', 'Algorithmic Complexity Optimization'],
+      recommendedRoadmaps: [
+        {
+          id: 'rm-frontend',
+          slug: 'frontend-developer',
+          title: 'Frontend Developer Roadmap',
+          level: 'Beginner to Advanced',
+          durationWeeks: 24
+        }
+      ],
+      recommendedResources: [
+        {
+          id: 'res-mdn-js',
+          title: 'MDN Web Docs — JavaScript Language Reference',
+          type: 'DOCS',
+          durationMinutes: 45,
+          url: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript'
+        },
+        {
+          id: 'res-react-docs',
+          title: 'React Official Documentation — Describing the UI',
+          type: 'DOCS',
+          durationMinutes: 30,
+          url: 'https://react.dev/learn'
+        }
+      ],
       questionReview,
-      review: questionReview
+      review: questionReview,
+      assessment: {
+        id: assessment.id,
+        slug: assessment.slug,
+        title: assessment.title,
+        category: assessment.category
+      }
     };
 
     StorageService.saveAssessmentAttempt(result);
@@ -458,7 +630,7 @@ class ApiClient {
 
   async getAssessmentAttempt(id) {
     const attempts = StorageService.getAssessmentAttempts();
-    return attempts.find((a) => a.assessmentId === id || a.assessmentSlug === id) || attempts[0];
+    return attempts.find((a) => a.assessmentId === id || a.assessmentSlug === id || a.id === id) || attempts[0];
   }
 
   // Learning Hub Resources
@@ -488,22 +660,43 @@ class ApiClient {
         id: 'tmpl-1',
         title: 'Interactive SaaS Analytics Dashboard',
         description: 'Build a multi-page analytics portal using React, Tailwind CSS, and Recharts with light/dark theme toggles.',
+        category: 'Frontend',
         difficulty: 'Intermediate',
-        skills: ['React', 'Tailwind CSS', 'Recharts', 'Lucide React']
+        skills: ['React', 'Tailwind CSS', 'Recharts', 'Lucide React'],
+        suggestedTech: ['React', 'Tailwind CSS', 'Recharts', 'Lucide React'],
+        learningObjectives: [
+          'Master component reusability and custom hook logic',
+          'Implement theme toggles with CSS variables and Tailwind',
+          'Deploy production build to cloud hosting'
+        ]
       },
       {
         id: 'tmpl-2',
         title: 'Kanban Flow Task Board',
         description: 'Create an interactive task workspace with column filters, priority badges, and localStorage persistence.',
+        category: 'Frontend',
         difficulty: 'Beginner',
-        skills: ['React', 'State Management', 'CSS Grid']
+        skills: ['React', 'State Management', 'CSS Grid'],
+        suggestedTech: ['React', 'State Management', 'CSS Grid'],
+        learningObjectives: [
+          'Implement drag-and-drop state updates without external libraries',
+          'Manage complex array filtering and sorting in React',
+          'Persist state in localStorage with resilient fallbacks'
+        ]
       },
       {
         id: 'tmpl-3',
         title: 'Full-Stack RESTful API Backend',
         description: 'Express.js server with modular controllers, input validation, and role-based API protection.',
+        category: 'Backend',
         difficulty: 'Intermediate',
-        skills: ['Node.js', 'Express', 'JWT', 'REST API']
+        skills: ['Node.js', 'Express', 'JWT', 'REST API'],
+        suggestedTech: ['Node.js', 'Express', 'JWT', 'REST API'],
+        learningObjectives: [
+          'Design RESTful endpoint conventions and HTTP status codes',
+          'Implement centralized error-handling middleware',
+          'Write automated integration tests with Vitest & Supertest'
+        ]
       }
     ];
   }
@@ -529,16 +722,44 @@ class ApiClient {
 
   async getPublicPortfolio(userId) {
     const profile = StorageService.getProfile();
-    const projects = StorageService.getProjects().filter((p) => p.status === 'Completed');
-    const verifiedSkills = StorageService.getVerifiedSkills();
+    const projects = StorageService.getProjects();
+    const completedProjects = projects.filter((p) => p.status === 'COMPLETED');
+    const verifiedAttempts = StorageService.getVerifiedSkills();
+
+    const student = {
+      id: userId || profile.id,
+      fullName: profile.fullName || 'Alex Chen',
+      email: profile.email || 'alex.chen@university.edu',
+      bio: profile.bio || 'Computer Science student passionate about building accessible web apps.',
+      educationLevel: profile.educationLevel || 'Undergraduate Computer Science (3rd Year)',
+      primaryCareerInterest: profile.primaryCareerInterest || profile.targetRole || 'Full-Stack Developer',
+      githubUrl: profile.githubUrl || 'https://github.com/devbharti07/skillpath',
+      linkedinUrl: profile.linkedinUrl || 'https://linkedin.com/in/alexchen',
+      portfolioWebsite: profile.portfolioWebsite || ''
+    };
+
+    const verifiedSkills = verifiedAttempts.map((s) => ({
+      name: s.title || s.category,
+      category: s.category || 'Engineering',
+      proficiency: s.proficiencyResult || s.proficiency || 'Advanced',
+      score: s.scorePercent || s.percentage || 80
+    }));
+
+    const achievements = [
+      { id: 'ach-1', title: 'Top 10% Score in JavaScript Core Assessment' },
+      { id: 'ach-2', title: 'Completed 7 Topics on Frontend Developer Track' },
+      { id: 'ach-3', title: 'Deployed Production Platform to Vercel' }
+    ];
 
     return {
-      user: {
-        ...profile,
-        id: userId || profile.id
-      },
-      projects,
-      verifiedSkills
+      student,
+      user: student,
+      projects: completedProjects.length > 0 ? completedProjects : projects,
+      completedProjects: completedProjects.length > 0 ? completedProjects : projects,
+      verifiedSkills: verifiedSkills.length > 0 ? verifiedSkills : [
+        { name: 'JavaScript Core (ES6+)', category: 'Frontend', proficiency: 'Advanced', score: 80 }
+      ],
+      achievements
     };
   }
 
@@ -562,8 +783,16 @@ class ApiClient {
     return { success: true };
   }
 
-  async getTasks() {
-    return StorageService.getTasks();
+  async getTasks(params) {
+    let tasks = StorageService.getTasks();
+    if (params?.filter === 'today') {
+      tasks = tasks.filter((t) => t.dueDate === 'Today');
+    } else if (params?.filter === 'upcoming') {
+      tasks = tasks.filter((t) => t.dueDate === 'Tomorrow' || t.dueDate === 'This Week');
+    } else if (params?.filter === 'overdue') {
+      tasks = tasks.filter((t) => !t.completed && t.dueDate === 'Yesterday');
+    }
+    return tasks;
   }
 
   async createTask(data) {
@@ -572,12 +801,10 @@ class ApiClient {
   }
 
   async updateTask(id, data) {
-    if (data.completed !== undefined) {
-      StorageService.toggleTask(id);
-    } else {
-      StorageService.saveTask({ ...data, id });
+    if (data.status !== undefined) {
+      data.completed = data.status === 'COMPLETED';
     }
-    const tasks = StorageService.getTasks();
+    const tasks = StorageService.saveTask({ ...data, id });
     return tasks.find((t) => t.id === id);
   }
 
@@ -586,13 +813,15 @@ class ApiClient {
     return { success: true };
   }
 
-  // AI Career Assistant (Intelligent Offline Guidance Engine)
+  // AI Career Assistant
   async getAssistantHistory() {
     return [
       {
         id: 'msg-1',
+        role: 'ASSISTANT',
         sender: 'assistant',
-        content: "Hello Alex! I am your SkillPath Career & Learning Assistant. Ask me anything about career tracks, recommended roadmaps, project ideas, or skill assessments."
+        content: "Hello Alex! I am your SkillPath Career & Learning Assistant. Ask me anything about career tracks, recommended roadmaps, project ideas, or skill assessments.",
+        message: "Hello Alex! I am your SkillPath Career & Learning Assistant. Ask me anything about career tracks, recommended roadmaps, project ideas, or skill assessments."
       }
     ];
   }
@@ -619,8 +848,10 @@ class ApiClient {
 
     return {
       id: `msg-${Date.now()}`,
+      role: 'ASSISTANT',
       sender: 'assistant',
       content: reply,
+      message: reply,
       source: 'SkillPath Intelligent Guidance Engine'
     };
   }
@@ -637,11 +868,27 @@ class ApiClient {
   }
 
   async getAdminUsers() {
-    return [
+    const list = [
       { id: 'u-1', fullName: 'Alex Chen', email: 'alex.chen@university.edu', role: 'STUDENT', createdAt: '2026-10-23' },
       { id: 'u-2', fullName: 'Sarah Connor', email: 'sarah.c@tech.edu', role: 'STUDENT', createdAt: '2026-10-22' },
       { id: 'u-3', fullName: 'Instructor Smith', email: 'instructor@university.edu', role: 'ADMIN', createdAt: '2026-10-20' }
     ];
+    return {
+      users: list,
+      // Array compatibility:
+      length: list.length,
+      map: (fn) => list.map(fn),
+      filter: (fn) => list.filter(fn),
+      forEach: (fn) => list.forEach(fn)
+    };
+  }
+
+  async createAdminCareer(careerData) {
+    return { success: true, career: careerData };
+  }
+
+  async createAdminSkill(skillData) {
+    return { success: true, skill: skillData };
   }
 }
 

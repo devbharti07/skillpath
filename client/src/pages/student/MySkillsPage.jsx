@@ -3,14 +3,10 @@ import { Link } from 'react-router-dom';
 import api from '../../services/api.js';
 import {
   CheckCircle2,
-  AlertTriangle,
   Plus,
   Trash2,
   Search,
-  Sparkles,
-  ArrowRight,
-  Code,
-  Zap
+  Code
 } from 'lucide-react';
 
 export default function MySkillsPage() {
@@ -33,10 +29,30 @@ export default function MySkillsPage() {
         api.getMySkills(),
         api.getSkills()
       ]);
-      setUserSkills(skillsRes.userSkills || []);
-      setStats(skillsRes.stats || { total: 0, verifiedCount: 0, provisionalCount: 0 });
-      setAvailableSkills(allRes || []);
-      if (allRes.length > 0) setSelectedSkillId(allRes[0].id);
+
+      const rawList = skillsRes?.userSkills || (Array.isArray(skillsRes) ? skillsRes : []);
+      const normalized = rawList.map((us, idx) => ({
+        id: us.id || `us-${idx}`,
+        isVerified: Boolean(us.isVerified || us.verified),
+        proficiency: us.proficiency || us.level || 'Intermediate',
+        skill: us.skill || {
+          id: us.id || `sk-${idx}`,
+          name: us.name || 'Technical Skill',
+          category: us.category || 'Frontend'
+        }
+      }));
+
+      setUserSkills(normalized);
+      const verifiedCount = normalized.filter(s => s.isVerified).length;
+      setStats(skillsRes?.stats || {
+        total: normalized.length,
+        verifiedCount,
+        provisionalCount: normalized.length - verifiedCount
+      });
+
+      const skillList = Array.isArray(allRes) ? allRes : allRes?.skills || [];
+      setAvailableSkills(skillList);
+      if (skillList.length > 0) setSelectedSkillId(skillList[0].id);
     } catch (err) {
       console.error('Failed to load skills:', err);
     } finally {
@@ -75,8 +91,10 @@ export default function MySkillsPage() {
   };
 
   const filteredSkills = userSkills.filter(us => {
-    const matchesSearch = us.skill.name.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = filterCategory === 'ALL' || us.skill.category === filterCategory;
+    const sName = us.skill?.name || us.name || '';
+    const sCat = us.skill?.category || us.category || '';
+    const matchesSearch = sName.toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = filterCategory === 'ALL' || sCat.toLowerCase() === filterCategory.toLowerCase();
     return matchesSearch && matchesCategory;
   });
 
@@ -189,45 +207,40 @@ export default function MySkillsPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-textMuted-light dark:text-textMuted-dark">
-                    {us.skill.category}
+                    {us.skill?.category || us.category}
                   </span>
                   <h4 className="font-bold text-sm text-textMain-light dark:text-textMain-dark mt-0.5">
-                    {us.skill.name}
+                    {us.skill?.name || us.name}
                   </h4>
                 </div>
 
                 {us.isVerified ? (
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Verified ({us.score}%)
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Verified
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                    <AlertTriangle className="w-3 h-3 text-amber-600" /> Provisional
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-textMuted-light dark:text-textMuted-dark">
+                    Provisional
                   </span>
                 )}
               </div>
 
-              <p className="text-xs text-textMuted-light dark:text-textMuted-dark line-clamp-2">
-                {us.skill.description}
-              </p>
-
-              <div className="pt-2 border-t border-borderBase-light dark:border-borderBase-dark flex items-center justify-between text-xs">
-                <span className="text-[11px] font-semibold text-textMuted-light dark:text-textMuted-dark">
-                  Level: <strong className="text-textMain-light dark:text-textMain-dark">{us.proficiency}</strong>
+              <div className="flex items-center justify-between text-xs pt-2 border-t border-borderBase-light dark:border-borderBase-dark">
+                <span className="text-textMuted-light dark:text-textMuted-dark">
+                  Proficiency: <strong className="text-textMain-light dark:text-textMain-dark">{us.proficiency}</strong>
                 </span>
 
                 <div className="flex items-center gap-2">
                   {!us.isVerified && (
                     <Link
                       to="/dashboard/assessments"
-                      className="text-[11px] font-bold text-primary hover:text-primary-700 flex items-center gap-1"
+                      className="text-[11px] font-bold text-primary hover:underline"
                     >
-                      <Zap className="w-3 h-3" /> Verify
+                      Verify →
                     </Link>
                   )}
                   <button
-                    onClick={() => handleDeleteSkill(us.skillId)}
-                    title="Remove skill"
+                    onClick={() => handleDeleteSkill(us.id)}
                     className="p-1 rounded text-slate-400 hover:text-red-500 transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -241,29 +254,29 @@ export default function MySkillsPage() {
 
       {/* Add Skill Modal */}
       {addModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="glass-card rounded-3xl p-6 max-w-md w-full space-y-4 shadow-soft-lg">
-            <h3 className="font-bold text-base text-textMain-light dark:text-textMain-dark">
-              Add Skill to Profile
-            </h3>
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="glass-card rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-soft-lg border">
+            <h3 className="font-bold text-base text-textMain-light dark:text-textMain-dark">Add Skill to Profile</h3>
             <form onSubmit={handleAddSkill} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-textMuted-light dark:text-textMuted-dark mb-1">
-                  Select Skill
+                <label className="block text-xs font-bold uppercase tracking-wider text-textMuted-light dark:text-textMuted-dark mb-1">
+                  Select Competency
                 </label>
                 <select
                   value={selectedSkillId}
                   onChange={(e) => setSelectedSkillId(e.target.value)}
                   className="w-full p-2.5 rounded-xl border border-borderBase-light dark:border-borderBase-dark bg-white dark:bg-slate-900 text-xs text-textMain-light dark:text-textMain-dark"
                 >
-                  {availableSkills.map(sk => (
-                    <option key={sk.id} value={sk.id}>{sk.name} ({sk.category})</option>
+                  {availableSkills.map((sk) => (
+                    <option key={sk.id} value={sk.id}>
+                      {sk.name} ({sk.category})
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-textMuted-light dark:text-textMuted-dark mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-textMuted-light dark:text-textMuted-dark mb-1">
                   Self-Reported Proficiency
                 </label>
                 <select
@@ -271,9 +284,9 @@ export default function MySkillsPage() {
                   onChange={(e) => setSelectedProficiency(e.target.value)}
                   className="w-full p-2.5 rounded-xl border border-borderBase-light dark:border-borderBase-dark bg-white dark:bg-slate-900 text-xs text-textMain-light dark:text-textMain-dark"
                 >
-                  <option value="BEGINNER">Beginner (Foundations & practice)</option>
-                  <option value="INTERMEDIATE">Intermediate (Completed projects)</option>
-                  <option value="ADVANCED">Advanced (Production experience)</option>
+                  <option value="BEGINNER">Beginner (Foundations)</option>
+                  <option value="INTERMEDIATE">Intermediate (Practical Work)</option>
+                  <option value="ADVANCED">Advanced (Production Experience)</option>
                 </select>
               </div>
 
@@ -287,9 +300,9 @@ export default function MySkillsPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-primary text-white hover:bg-primary-700"
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-primary text-white hover:bg-primary-700"
                 >
-                  Save Skill
+                  Record Skill
                 </button>
               </div>
             </form>

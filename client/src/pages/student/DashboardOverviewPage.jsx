@@ -382,21 +382,28 @@ export default function DashboardOverviewPage() {
             </div>
           ) : (
             <div className="space-y-2.5">
-              {recentAssessments.map((att) => (
-                <div key={att.id} className="p-3.5 rounded-xl border border-borderBase-light dark:border-borderBase-dark flex items-center justify-between">
-                  <div>
-                    <h5 className="font-bold text-xs text-textMain-light dark:text-textMain-dark">{att.assessmentTitle}</h5>
-                    <p className="text-[10px] text-textMuted-light dark:text-textMuted-dark">
-                      Level: {att.proficiencyResult} • {new Date(att.completedAt).toLocaleDateString()}
-                    </p>
+              {recentAssessments.map((att, idx) => {
+                const title = att.assessmentTitle || att.title || 'Skill Assessment';
+                const prof = att.proficiencyResult || att.proficiency || 'Advanced';
+                const score = att.scorePercent ?? att.percentage ?? 0;
+                const completedDate = att.completedAt ? new Date(att.completedAt).toLocaleDateString() : 'Recently';
+
+                return (
+                  <div key={att.id || att.assessmentId || idx} className="p-3.5 rounded-xl border border-borderBase-light dark:border-borderBase-dark flex items-center justify-between">
+                    <div>
+                      <h5 className="font-bold text-xs text-textMain-light dark:text-textMain-dark">{title}</h5>
+                      <p className="text-[10px] text-textMuted-light dark:text-textMuted-dark">
+                        Level: {prof} • {completedDate}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className={`text-base font-extrabold ${score >= 60 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        {score}%
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className={`text-base font-extrabold ${att.scorePercent >= 60 ? 'text-emerald-600' : 'text-amber-600'}`}>
-                      {att.scorePercent}%
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -487,8 +494,8 @@ export default function DashboardOverviewPage() {
           </h3>
 
           <div className="space-y-2">
-            {recommendedSkills.map((sk) => (
-              <div key={sk.id} className="p-3 rounded-xl border border-borderBase-light dark:border-borderBase-dark flex items-center justify-between">
+            {recommendedSkills.map((sk, sIdx) => (
+              <div key={sk.id || sk.name || sIdx} className="p-3 rounded-xl border border-borderBase-light dark:border-borderBase-dark flex items-center justify-between">
                 <div>
                   <span className="text-xs font-bold text-textMain-light dark:text-textMain-dark">{sk.name}</span>
                   <p className="text-[10px] text-textMuted-light dark:text-textMuted-dark">{sk.reason}</p>

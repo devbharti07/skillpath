@@ -64,7 +64,7 @@ export default function AdminDashboardPage() {
           api.getAdminUsers()
         ]);
         setOverview(ovRes);
-        setUsersList(uRes.users || []);
+        setUsersList(Array.isArray(uRes) ? uRes : uRes?.users || []);
       } catch (err) {
         console.error('Failed to load admin data:', err);
       } finally {

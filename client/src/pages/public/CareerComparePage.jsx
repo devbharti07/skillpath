@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, Link, useNavigate } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import api from '../../services/api.js';
-import { Scale, Check, ArrowRight, ArrowLeft, Clock, Code, Layers, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Scale, Check, ArrowLeft, Code, Layers, ShieldCheck } from 'lucide-react';
 
 export default function CareerComparePage() {
   const location = useLocation();
-  const navigate = useNavigate();
   const [careers, setCareers] = useState([]);
   const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -17,8 +16,13 @@ export default function CareerComparePage() {
       try {
         setLoading(true);
         const res = await api.compareCareers(initialSlugs);
-        setCareers(res.careers || []);
-        setInsights(res.comparisonInsights || null);
+        if (Array.isArray(res)) {
+          setCareers(res);
+          setInsights({ commonSkills: ['Git & GitHub', 'RESTful APIs', 'Problem Solving'] });
+        } else {
+          setCareers(res?.careers || []);
+          setInsights(res?.comparisonInsights || { commonSkills: ['Git & GitHub', 'RESTful APIs', 'Problem Solving'] });
+        }
       } catch (err) {
         console.error('Failed to compare careers:', err);
       } finally {
@@ -87,82 +91,89 @@ export default function CareerComparePage() {
       {/* Comparison Matrix Table / Cards */}
       <div className="overflow-x-auto pb-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-w-[700px]">
-          {careers.map(career => (
-            <div
-              key={career.id}
-              className="glass-card rounded-3xl p-6 border border-borderBase-light dark:border-borderBase-dark flex flex-col justify-between space-y-6"
-            >
-              <div className="space-y-4">
-                <div>
-                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-primary-50 dark:bg-primary-950 text-primary uppercase">
-                    {career.category}
-                  </span>
-                  <h3 className="text-xl font-extrabold text-textMain-light dark:text-textMain-dark mt-1">
-                    {career.title}
-                  </h3>
-                </div>
+          {careers.map(career => {
+            const skills = career.technicalSkills || career.requiredSkills || [];
+            const diff = career.difficulty || career.level || 'Intermediate';
+            const projects = career.exampleProjects || (career.recommendedProjects || []).map(p => typeof p === 'string' ? p : p.title);
+            const prereqs = career.prerequisites || ['Basic computer literacy'];
 
-                {/* Duration & Difficulty */}
-                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex justify-between text-xs">
+            return (
+              <div
+                key={career.id}
+                className="glass-card rounded-3xl p-6 border border-borderBase-light dark:border-borderBase-dark flex flex-col justify-between space-y-6"
+              >
+                <div className="space-y-4">
                   <div>
-                    <span className="text-[10px] text-textMuted-light dark:text-textMuted-dark block uppercase font-bold">Estimated Time</span>
-                    <span className="font-bold text-textMain-light dark:text-textMain-dark">~{career.estimatedLearningWeeks} Weeks</span>
+                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-primary-50 dark:bg-primary-950 text-primary uppercase">
+                      {career.category}
+                    </span>
+                    <h3 className="text-xl font-extrabold text-textMain-light dark:text-textMain-dark mt-1">
+                      {career.title}
+                    </h3>
                   </div>
-                  <div>
-                    <span className="text-[10px] text-textMuted-light dark:text-textMuted-dark block uppercase font-bold">Difficulty</span>
-                    <span className="font-bold text-textMain-light dark:text-textMain-dark">{career.difficulty}</span>
+
+                  {/* Duration & Difficulty */}
+                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex justify-between text-xs">
+                    <div>
+                      <span className="text-[10px] text-textMuted-light dark:text-textMuted-dark block uppercase font-bold">Estimated Time</span>
+                      <span className="font-bold text-textMain-light dark:text-textMain-dark">~{career.estimatedLearningWeeks || 24} Weeks</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-textMuted-light dark:text-textMuted-dark block uppercase font-bold">Difficulty</span>
+                      <span className="font-bold text-textMain-light dark:text-textMain-dark">{diff}</span>
+                    </div>
+                  </div>
+
+                  {/* Technical Skills */}
+                  <div className="space-y-1.5">
+                    <h5 className="text-xs font-bold text-textMain-light dark:text-textMain-dark flex items-center gap-1.5">
+                      <Code className="w-3.5 h-3.5 text-primary" /> Key Tech Skills
+                    </h5>
+                    <div className="flex flex-wrap gap-1.5">
+                      {skills.map(s => (
+                        <span key={s} className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-primary-50 dark:bg-primary-950/60 text-primary border border-primary-100 dark:border-primary-900">
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Prerequisites */}
+                  <div className="space-y-1.5">
+                    <h5 className="text-xs font-bold text-textMain-light dark:text-textMain-dark flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-accent" /> Prerequisites
+                    </h5>
+                    <ul className="text-xs text-textMuted-light dark:text-textMuted-dark space-y-1">
+                      {prereqs.map((p, i) => (
+                        <li key={i}>• {p}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Example Projects */}
+                  <div className="space-y-1.5">
+                    <h5 className="text-xs font-bold text-textMain-light dark:text-textMain-dark flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-amber-500" /> Milestone Projects
+                    </h5>
+                    <ul className="text-xs text-textMuted-light dark:text-textMuted-dark space-y-1">
+                      {projects.map((p, i) => (
+                        <li key={i}>★ {p}</li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
 
-                {/* Technical Skills */}
-                <div className="space-y-1.5">
-                  <h5 className="text-xs font-bold text-textMain-light dark:text-textMain-dark flex items-center gap-1.5">
-                    <Code className="w-3.5 h-3.5 text-primary" /> Key Tech Skills
-                  </h5>
-                  <div className="flex flex-wrap gap-1.5">
-                    {career.technicalSkills.map(s => (
-                      <span key={s} className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-primary-50 dark:bg-primary-950/60 text-primary border border-primary-100 dark:border-primary-900">
-                        {s}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Prerequisites */}
-                <div className="space-y-1.5">
-                  <h5 className="text-xs font-bold text-textMain-light dark:text-textMain-dark flex items-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-accent" /> Prerequisites
-                  </h5>
-                  <ul className="text-xs text-textMuted-light dark:text-textMuted-dark space-y-1">
-                    {career.prerequisites.map((p, i) => (
-                      <li key={i}>• {p}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Example Projects */}
-                <div className="space-y-1.5">
-                  <h5 className="text-xs font-bold text-textMain-light dark:text-textMain-dark flex items-center gap-1.5">
-                    <Layers className="w-3.5 h-3.5 text-amber-500" /> Milestone Projects
-                  </h5>
-                  <ul className="text-xs text-textMuted-light dark:text-textMuted-dark space-y-1">
-                    {career.exampleProjects.map((p, i) => (
-                      <li key={i}>★ {p}</li>
-                    ))}
-                  </ul>
+                <div className="pt-4 border-t border-borderBase-light dark:border-borderBase-dark">
+                  <Link
+                    to={`/careers/${career.slug}`}
+                    className="w-full py-2.5 rounded-xl text-xs font-bold bg-primary text-white hover:bg-primary-700 text-center block transition-colors shadow-sm"
+                  >
+                    Explore Complete Roadmap →
+                  </Link>
                 </div>
               </div>
-
-              <div className="pt-4 border-t border-borderBase-light dark:border-borderBase-dark">
-                <Link
-                  to={`/careers/${career.slug}`}
-                  className="w-full py-2.5 rounded-xl text-xs font-bold bg-primary text-white hover:bg-primary-700 text-center block transition-colors shadow-sm"
-                >
-                  Explore Complete Roadmap →
-                </Link>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

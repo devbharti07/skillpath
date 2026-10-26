@@ -11,7 +11,6 @@ import {
   Globe,
   Briefcase,
   GraduationCap,
-  Sparkles,
   Code2
 } from 'lucide-react';
 
@@ -49,7 +48,7 @@ export default function PublicPortfolioPage() {
       <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center space-y-4">
         <Compass className="w-12 h-12 text-slate-400" />
         <h2 className="text-xl font-bold text-textMain-light dark:text-textMain-dark">Portfolio Unavailable</h2>
-        <p className="text-xs text-textMuted-light dark:text-textMuted-dark max-w-sm">{error}</p>
+        <p className="text-xs text-textMuted-light dark:text-textMuted-dark max-w-sm">{error || 'Could not load portfolio data.'}</p>
         <Link to="/" className="px-4 py-2 rounded-xl text-xs font-semibold bg-primary text-white">
           Return to SkillPath Home
         </Link>
@@ -57,7 +56,10 @@ export default function PublicPortfolioPage() {
     );
   }
 
-  const { student, verifiedSkills, completedProjects, achievements } = portfolio;
+  const student = portfolio.student || portfolio.user || {};
+  const verifiedSkills = portfolio.verifiedSkills || [];
+  const completedProjects = portfolio.completedProjects || portfolio.projects || [];
+  const achievements = portfolio.achievements || [];
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12 space-y-10 animate-fadeIn">
@@ -75,7 +77,7 @@ export default function PublicPortfolioPage() {
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-extrabold text-textMain-light dark:text-textMain-dark">
-              {student.fullName}
+              {student.fullName || 'Student Portfolio'}
             </h1>
 
             <p className="text-xs sm:text-sm text-textMuted-light dark:text-textMuted-dark leading-relaxed">
@@ -175,19 +177,19 @@ export default function PublicPortfolioPage() {
             {completedProjects.map(proj => (
               <div key={proj.id} className="glass-card p-5 rounded-2xl border space-y-3">
                 <div>
-                  <span className="text-[10px] font-bold text-primary uppercase">{proj.category}</span>
+                  <span className="text-[10px] font-bold text-primary uppercase">{proj.category || 'Engineering'}</span>
                   <h4 className="font-bold text-sm text-textMain-light dark:text-textMain-dark mt-0.5">{proj.title}</h4>
                   <p className="text-xs text-textMuted-light dark:text-textMuted-dark mt-1 line-clamp-2">{proj.description}</p>
                 </div>
 
                 <div className="flex items-center gap-4 text-xs pt-2 border-t border-borderBase-light dark:border-borderBase-dark">
-                  {proj.repoUrl && (
-                    <a href={proj.repoUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 font-semibold text-textMain-light dark:text-textMain-dark hover:text-primary">
+                  {(proj.repoUrl || proj.githubUrl) && (
+                    <a href={proj.repoUrl || proj.githubUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 font-semibold text-textMain-light dark:text-textMain-dark hover:text-primary">
                       <Github className="w-3.5 h-3.5" /> Repo
                     </a>
                   )}
-                  {proj.demoUrl && (
-                    <a href={proj.demoUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 font-semibold text-primary hover:underline">
+                  {(proj.demoUrl || proj.liveUrl) && (
+                    <a href={proj.demoUrl || proj.liveUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 font-semibold text-primary hover:underline">
                       <ExternalLink className="w-3.5 h-3.5" /> Live Demo
                     </a>
                   )}
@@ -206,8 +208,8 @@ export default function PublicPortfolioPage() {
         </h3>
 
         <div className="flex flex-wrap gap-3">
-          {achievements.map(ach => (
-            <div key={ach.id} className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border flex items-center gap-2 text-xs">
+          {achievements.map((ach, i) => (
+            <div key={ach.id || i} className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border flex items-center gap-2 text-xs">
               <Award className="w-4 h-4 text-amber-500" />
               <span className="font-bold text-textMain-light dark:text-textMain-dark">{ach.title}</span>
             </div>

@@ -50,13 +50,13 @@ export default function ProfileSettingsPage() {
     if (user) {
       setProfileForm({
         fullName: user.fullName || '',
-        educationLevel: user.profile?.educationLevel || '',
-        primaryCareerInterest: user.profile?.primaryCareerInterest || '',
-        bio: user.profile?.bio || '',
-        githubUrl: user.profile?.githubUrl || '',
-        linkedinUrl: user.profile?.linkedinUrl || '',
-        portfolioWebsite: user.profile?.portfolioWebsite || '',
-        isPublic: user.profile?.isPublic ?? true
+        educationLevel: user.educationLevel || user.profile?.educationLevel || '',
+        primaryCareerInterest: user.primaryCareerInterest || user.targetRole || user.primaryInterest || user.profile?.primaryCareerInterest || '',
+        bio: user.bio || user.profile?.bio || '',
+        githubUrl: user.githubUrl || user.profile?.githubUrl || '',
+        linkedinUrl: user.linkedinUrl || user.profile?.linkedinUrl || '',
+        portfolioWebsite: user.portfolioWebsite || user.profile?.portfolioWebsite || '',
+        isPublic: user.isPublic ?? user.profile?.isPublic ?? true
       });
     }
   }, [user]);

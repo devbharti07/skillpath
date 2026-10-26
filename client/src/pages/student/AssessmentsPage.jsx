@@ -93,7 +93,7 @@ export default function AssessmentsPage() {
                     {a.category}
                   </span>
                   <span className="text-[10px] font-bold text-textMuted-light dark:text-textMuted-dark">
-                    Passing: {a.passingScorePercent}%
+                    Passing: {a.passingScorePercent || 60}%
                   </span>
                 </div>
 
@@ -125,7 +125,7 @@ export default function AssessmentsPage() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-textMuted-light dark:text-textMuted-dark">Previous Score:</span>
-                      <span className={`font-extrabold ${a.lastAttempt.scorePercent >= a.passingScorePercent ? 'text-emerald-600' : 'text-amber-600'}`}>
+                      <span className={`font-extrabold ${a.lastAttempt.scorePercent >= (a.passingScorePercent || 60) ? 'text-emerald-600' : 'text-amber-600'}`}>
                         {a.lastAttempt.scorePercent}% ({a.lastAttempt.proficiencyResult})
                       </span>
                     </div>
@@ -160,42 +160,52 @@ export default function AssessmentsPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {history.map(att => (
-                <div
-                  key={att.id}
-                  className="glass-card p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-borderBase-light dark:border-borderBase-dark"
-                >
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-primary uppercase tracking-wider">
-                      {att.assessment.category}
-                    </span>
-                    <h4 className="font-bold text-sm text-textMain-light dark:text-textMain-dark">
-                      {att.assessment.title}
-                    </h4>
-                    <p className="text-xs text-textMuted-light dark:text-textMuted-dark">
-                      Completed: {new Date(att.completedAt).toLocaleDateString()} • {att.correctAnswers} of {att.totalQuestions} correct
-                    </p>
-                  </div>
+              {history.map((att, idx) => {
+                const cat = att.assessment?.category || att.category || 'Skill Evaluation';
+                const title = att.assessment?.title || att.title || att.assessmentTitle || 'Assessment Result';
+                const targetSlug = att.assessment?.slug || att.assessmentSlug || 'javascript-core';
+                const score = att.scorePercent ?? att.percentage ?? 0;
+                const prof = att.proficiencyResult || att.proficiency || 'Proficient';
+                const correctCount = att.correctAnswers ?? att.correctCount ?? 0;
+                const totalQ = att.totalQuestions || 5;
 
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <div className={`text-xl font-extrabold ${att.scorePercent >= 60 ? 'text-emerald-600' : 'text-amber-600'}`}>
-                        {att.scorePercent}%
-                      </div>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-textMuted-light dark:text-textMuted-dark uppercase">
-                        {att.proficiencyResult}
+                return (
+                  <div
+                    key={att.id || idx}
+                    className="glass-card p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-borderBase-light dark:border-borderBase-dark"
+                  >
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-primary uppercase tracking-wider">
+                        {cat}
                       </span>
+                      <h4 className="font-bold text-sm text-textMain-light dark:text-textMain-dark">
+                        {title}
+                      </h4>
+                      <p className="text-xs text-textMuted-light dark:text-textMuted-dark">
+                        Completed: {att.completedAt ? new Date(att.completedAt).toLocaleDateString() : 'Recently'} • {correctCount} of {totalQ} correct
+                      </p>
                     </div>
 
-                    <Link
-                      to={`/dashboard/assessments/${att.assessment.slug}`}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-borderBase-light dark:border-borderBase-dark hover:bg-slate-100 text-textMain-light dark:text-textMain-dark"
-                    >
-                      Retake
-                    </Link>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <div className={`text-xl font-extrabold ${score >= 60 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                          {score}%
+                        </div>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-textMuted-light dark:text-textMuted-dark uppercase">
+                          {prof}
+                        </span>
+                      </div>
+
+                      <Link
+                        to={`/dashboard/assessments/${targetSlug}`}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-borderBase-light dark:border-borderBase-light hover:bg-slate-100 text-textMain-light dark:text-textMain-dark"
+                      >
+                        Retake
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

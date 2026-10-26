@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useTheme } from '../contexts/ThemeContext.jsx';
+import ErrorBoundary from '../components/common/ErrorBoundary.jsx';
 import {
   Compass,
   LayoutDashboard,
@@ -275,7 +276,9 @@ export default function DashboardLayout() {
 
         {/* Dynamic Nested Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-          <Outlet />
+          <ErrorBoundary isRouteLevel title="Dashboard section temporarily unavailable">
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>

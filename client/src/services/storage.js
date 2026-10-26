@@ -19,9 +19,24 @@ const initialProfile = {
   role: 'STUDENT',
   educationLevel: 'Undergraduate Computer Science (3rd Year)',
   primaryInterest: 'Full-Stack Web Development',
+  primaryCareerInterest: 'Full-Stack Developer',
+  targetRole: 'Full-Stack Developer',
   bio: 'Computer Science student passionate about building accessible, performant web applications with React, Node.js, and modern cloud technologies.',
   weeklyAvailabilityHours: 15,
-  targetRole: 'Full-Stack Developer'
+  githubUrl: 'https://github.com/devbharti07/skillpath',
+  linkedinUrl: 'https://linkedin.com/in/alexchen',
+  portfolioWebsite: 'https://skillpath-portfolio.dev',
+  isPublic: true,
+  profile: {
+    educationLevel: 'Undergraduate Computer Science (3rd Year)',
+    primaryCareerInterest: 'Full-Stack Developer',
+    bio: 'Computer Science student passionate about building accessible, performant web applications with React, Node.js, and modern cloud technologies.',
+    weeklyAvailabilityHours: 15,
+    githubUrl: 'https://github.com/devbharti07/skillpath',
+    linkedinUrl: 'https://linkedin.com/in/alexchen',
+    portfolioWebsite: 'https://skillpath-portfolio.dev',
+    isPublic: true
+  }
 };
 
 const initialGoals = [
@@ -30,7 +45,9 @@ const initialGoals = [
     title: 'Complete Frontend & React Mastery',
     category: 'Curriculum',
     deadline: '2026-11-15',
+    targetDate: '2026-11-15',
     progress: 70,
+    progressPercent: 70,
     status: 'In Progress',
     description: 'Master component architecture, custom hooks, and state management.'
   },
@@ -39,7 +56,9 @@ const initialGoals = [
     title: 'Publish Full-Stack Capstone Project',
     category: 'Portfolio',
     deadline: '2026-12-01',
+    targetDate: '2026-12-01',
     progress: 40,
+    progressPercent: 40,
     status: 'In Progress',
     description: 'Develop and deploy an end-to-end interactive application with database integration.'
   },
@@ -48,7 +67,9 @@ const initialGoals = [
     title: 'Pass JavaScript Core Assessment with Distinction',
     category: 'Certification',
     deadline: '2026-10-30',
+    targetDate: '2026-10-30',
     progress: 100,
+    progressPercent: 100,
     status: 'Completed',
     description: 'Achieve 80%+ on timed evaluation of ES6+, closures, and asynchronous event loop.'
   }
@@ -59,40 +80,45 @@ const initialTasks = [
     id: 'task-1',
     title: 'Review React useEffect dependency array best practices',
     goalId: 'goal-1',
-    priority: 'High',
+    priority: 'HIGH',
     completed: true,
+    status: 'COMPLETED',
     dueDate: 'Today'
   },
   {
     id: 'task-2',
     title: 'Implement responsive dark/light mode toggle in showcase app',
     goalId: 'goal-2',
-    priority: 'Medium',
+    priority: 'MEDIUM',
     completed: true,
+    status: 'COMPLETED',
     dueDate: 'Today'
   },
   {
     id: 'task-3',
     title: 'Complete SQL Relational Joins & Indexing Assessment',
     goalId: 'goal-3',
-    priority: 'High',
+    priority: 'HIGH',
     completed: false,
+    status: 'TODO',
     dueDate: 'Tomorrow'
   },
   {
     id: 'task-4',
     title: 'Deploy frontend client to Vercel and verify deep routing rewrites',
     goalId: 'goal-2',
-    priority: 'High',
+    priority: 'HIGH',
     completed: true,
+    status: 'COMPLETED',
     dueDate: 'Completed'
   },
   {
     id: 'task-5',
     title: 'Read MDN guide on CSS Grid 12-column template areas',
     goalId: 'goal-1',
-    priority: 'Low',
+    priority: 'LOW',
     completed: false,
+    status: 'TODO',
     dueDate: 'This Week'
   }
 ];
@@ -102,30 +128,39 @@ const initialProjects = [
     id: 'proj-1',
     title: 'SkillPath Career Engine & Learning Hub',
     description: 'An interactive career exploration portal with roadmaps, skill evaluations, and progress tracking for students.',
+    category: 'Frontend',
     techStack: ['React 19', 'Tailwind CSS', 'Vite', 'Lucide Icons'],
-    difficulty: 'Intermediate',
-    status: 'Completed',
+    difficulty: 'INTERMEDIATE',
+    status: 'COMPLETED',
+    repoUrl: 'https://github.com/devbharti07/skillpath',
     githubUrl: 'https://github.com/devbharti07/skillpath',
-    liveUrl: 'https://prompt-obsidian-eyifjsp.tmp.now'
+    demoUrl: 'https://skillpath-rho-lyart.vercel.app',
+    liveUrl: 'https://skillpath-rho-lyart.vercel.app'
   },
   {
     id: 'proj-2',
     title: 'Kanban Flow Task Workspace',
     description: 'A responsive drag-and-drop productivity board with local state management and priority labeling.',
+    category: 'Frontend',
     techStack: ['React', 'Tailwind CSS', 'HTML5 Drag & Drop'],
-    difficulty: 'Beginner',
-    status: 'In Progress',
-    githubUrl: 'https://github.com/example/kanban-flow',
+    difficulty: 'BEGINNER',
+    status: 'IN_PROGRESS',
+    repoUrl: 'https://github.com/devbharti07/skillpath',
+    githubUrl: 'https://github.com/devbharti07/skillpath',
+    demoUrl: 'https://example.com/demo',
     liveUrl: 'https://example.com/demo'
   },
   {
     id: 'proj-3',
     title: 'Full-Stack RESTful API Microservice',
     description: 'Node.js Express backend service with secure JWT cookies, modular routes, and validation middleware.',
+    category: 'Backend',
     techStack: ['Node.js', 'Express', 'JWT', 'REST API'],
-    difficulty: 'Intermediate',
-    status: 'In Progress',
-    githubUrl: 'https://github.com/example/node-microservice',
+    difficulty: 'INTERMEDIATE',
+    status: 'IN_PROGRESS',
+    repoUrl: 'https://github.com/devbharti07/skillpath',
+    githubUrl: 'https://github.com/devbharti07/skillpath',
+    demoUrl: '',
     liveUrl: ''
   }
 ];
@@ -137,16 +172,26 @@ const initialRoadmapProgress = {
 
 const initialAttempts = [
   {
+    id: 'att-1',
     assessmentId: 'assessment-js',
     assessmentSlug: 'javascript-core',
     title: 'JavaScript Core & Async Mastery',
     category: 'JavaScript',
     totalQuestions: 5,
     correctCount: 4,
+    correctAnswers: 4,
     percentage: 80,
+    scorePercent: 80,
     proficiency: 'Advanced',
+    proficiencyResult: 'Advanced',
     isVerified: true,
-    completedAt: '2026-10-23T12:00:00Z'
+    completedAt: '2026-10-23T12:00:00Z',
+    assessment: {
+      id: 'assessment-js',
+      slug: 'javascript-core',
+      title: 'JavaScript Core & Async Mastery',
+      category: 'JavaScript'
+    }
   }
 ];
 
@@ -173,24 +218,76 @@ function writeStorage(key, value) {
 export const StorageService = {
   // Profile
   getProfile() {
-    return readStorage(STORAGE_KEYS.PROFILE, initialProfile);
+    const profile = readStorage(STORAGE_KEYS.PROFILE, initialProfile);
+    // Ensure both top-level and nested .profile properties exist for safety
+    return {
+      ...initialProfile,
+      ...profile,
+      primaryCareerInterest: profile.primaryCareerInterest || profile.targetRole || profile.primaryInterest || initialProfile.primaryCareerInterest,
+      profile: {
+        ...initialProfile.profile,
+        ...(profile.profile || {}),
+        educationLevel: profile.educationLevel || profile.profile?.educationLevel || initialProfile.educationLevel,
+        primaryCareerInterest: profile.primaryCareerInterest || profile.profile?.primaryCareerInterest || initialProfile.primaryCareerInterest,
+        bio: profile.bio || profile.profile?.bio || initialProfile.bio
+      }
+    };
   },
   saveProfile(profile) {
-    writeStorage(STORAGE_KEYS.PROFILE, profile);
-    return profile;
+    const current = this.getProfile();
+    const updated = {
+      ...current,
+      ...profile,
+      primaryCareerInterest: profile.primaryCareerInterest || profile.targetRole || current.primaryCareerInterest,
+      profile: {
+        ...current.profile,
+        ...(profile.profile || {}),
+        ...profile
+      }
+    };
+    writeStorage(STORAGE_KEYS.PROFILE, updated);
+    return updated;
   },
 
   // Goals
   getGoals() {
-    return readStorage(STORAGE_KEYS.GOALS, initialGoals);
+    const rawGoals = readStorage(STORAGE_KEYS.GOALS, initialGoals);
+    const tasks = readStorage(STORAGE_KEYS.TASKS, initialTasks);
+
+    return rawGoals.map((g) => {
+      const goalTasks = tasks.filter((t) => t.goalId === g.id);
+      const totalTasks = goalTasks.length > 0 ? goalTasks.length : (g.totalTasks || 3);
+      const completedTasks = goalTasks.length > 0
+        ? goalTasks.filter((t) => t.completed || t.status === 'COMPLETED').length
+        : (g.completedTasks || Math.round((g.progress || 70) * totalTasks / 100));
+      const pct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : (g.progress || 70);
+
+      return {
+        ...g,
+        progress: g.progress ?? pct,
+        progressPercent: pct,
+        totalTasks,
+        completedTasks
+      };
+    });
   },
   saveGoal(goal) {
     const goals = this.getGoals();
     const existingIndex = goals.findIndex((g) => g.id === goal.id);
+    const progressVal = goal.progressPercent ?? goal.progress ?? 0;
+    const newGoal = {
+      ...goal,
+      id: goal.id || `goal-${Date.now()}`,
+      progress: progressVal,
+      progressPercent: progressVal,
+      status: goal.status || (progressVal >= 100 ? 'Completed' : 'In Progress'),
+      targetDate: goal.targetDate || goal.deadline || new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]
+    };
+
     if (existingIndex >= 0) {
-      goals[existingIndex] = { ...goals[existingIndex], ...goal };
+      goals[existingIndex] = { ...goals[existingIndex], ...newGoal };
     } else {
-      goals.unshift({ ...goal, id: goal.id || `goal-${Date.now()}` });
+      goals.unshift(newGoal);
     }
     writeStorage(STORAGE_KEYS.GOALS, goals);
     return goals;
@@ -198,20 +295,45 @@ export const StorageService = {
   deleteGoal(id) {
     const goals = this.getGoals().filter((g) => g.id !== id);
     writeStorage(STORAGE_KEYS.GOALS, goals);
+    // Also remove associated tasks
+    const tasks = this.getTasks().filter((t) => t.goalId !== id);
+    writeStorage(STORAGE_KEYS.TASKS, tasks);
     return goals;
   },
 
   // Tasks
   getTasks() {
-    return readStorage(STORAGE_KEYS.TASKS, initialTasks);
+    const raw = readStorage(STORAGE_KEYS.TASKS, initialTasks);
+    return raw.map((t) => {
+      const isCompleted = Boolean(t.completed || t.status === 'COMPLETED');
+      return {
+        ...t,
+        completed: isCompleted,
+        status: isCompleted ? 'COMPLETED' : 'TODO',
+        priority: (t.priority || 'MEDIUM').toUpperCase()
+      };
+    });
   },
   saveTask(task) {
     const tasks = this.getTasks();
-    const existingIndex = tasks.findIndex((t) => t.id === task.id);
+    const isCompleted = task.completed !== undefined
+      ? Boolean(task.completed)
+      : task.status === 'COMPLETED';
+
+    const normalizedTask = {
+      ...task,
+      id: task.id || `task-${Date.now()}`,
+      completed: isCompleted,
+      status: isCompleted ? 'COMPLETED' : 'TODO',
+      priority: (task.priority || 'MEDIUM').toUpperCase(),
+      dueDate: task.dueDate || 'Today'
+    };
+
+    const existingIndex = tasks.findIndex((t) => t.id === normalizedTask.id);
     if (existingIndex >= 0) {
-      tasks[existingIndex] = { ...tasks[existingIndex], ...task };
+      tasks[existingIndex] = { ...tasks[existingIndex], ...normalizedTask };
     } else {
-      tasks.unshift({ ...task, id: task.id || `task-${Date.now()}`, completed: false });
+      tasks.unshift(normalizedTask);
     }
     writeStorage(STORAGE_KEYS.TASKS, tasks);
     return tasks;
@@ -219,7 +341,12 @@ export const StorageService = {
   toggleTask(id) {
     const tasks = this.getTasks().map((t) => {
       if (t.id === id) {
-        return { ...t, completed: !t.completed };
+        const next = !t.completed;
+        return {
+          ...t,
+          completed: next,
+          status: next ? 'COMPLETED' : 'TODO'
+        };
       }
       return t;
     });
@@ -234,15 +361,45 @@ export const StorageService = {
 
   // Projects
   getProjects() {
-    return readStorage(STORAGE_KEYS.PROJECTS, initialProjects);
+    const raw = readStorage(STORAGE_KEYS.PROJECTS, initialProjects);
+    return raw.map((p) => {
+      let upperStatus = (p.status || 'IN_PROGRESS').toUpperCase().replace(' ', '_');
+      if (upperStatus === 'COMPLETED' || upperStatus === 'IN_PROGRESS' || upperStatus === 'NOT_STARTED') {
+        // standard
+      } else {
+        upperStatus = 'IN_PROGRESS';
+      }
+
+      return {
+        ...p,
+        status: upperStatus,
+        repoUrl: p.repoUrl || p.githubUrl || '',
+        githubUrl: p.githubUrl || p.repoUrl || '',
+        demoUrl: p.demoUrl || p.liveUrl || '',
+        liveUrl: p.liveUrl || p.demoUrl || '',
+        category: p.category || 'Frontend'
+      };
+    });
   },
   saveProject(project) {
     const projects = this.getProjects();
-    const existingIndex = projects.findIndex((p) => p.id === project.id);
+    const normalizedStatus = (project.status || 'IN_PROGRESS').toUpperCase().replace(' ', '_');
+    const normalized = {
+      ...project,
+      id: project.id || `proj-${Date.now()}`,
+      status: normalizedStatus,
+      repoUrl: project.repoUrl || project.githubUrl || '',
+      githubUrl: project.githubUrl || project.repoUrl || '',
+      demoUrl: project.demoUrl || project.liveUrl || '',
+      liveUrl: project.liveUrl || project.demoUrl || '',
+      category: project.category || 'Frontend'
+    };
+
+    const existingIndex = projects.findIndex((p) => p.id === normalized.id);
     if (existingIndex >= 0) {
-      projects[existingIndex] = { ...projects[existingIndex], ...project };
+      projects[existingIndex] = { ...projects[existingIndex], ...normalized };
     } else {
-      projects.unshift({ ...project, id: project.id || `proj-${Date.now()}` });
+      projects.unshift(normalized);
     }
     writeStorage(STORAGE_KEYS.PROJECTS, projects);
     return projects;
@@ -277,13 +434,55 @@ export const StorageService = {
 
   // Skill Assessment Attempts & Verification
   getAssessmentAttempts() {
-    return readStorage(STORAGE_KEYS.ASSESSMENT_ATTEMPTS, initialAttempts);
+    const attempts = readStorage(STORAGE_KEYS.ASSESSMENT_ATTEMPTS, initialAttempts);
+    return attempts.map((a, idx) => {
+      const score = a.scorePercent ?? a.percentage ?? 80;
+      const prof = a.proficiencyResult || a.proficiency || (score >= 80 ? 'Advanced' : score >= 60 ? 'Intermediate' : 'Beginner');
+
+      return {
+        ...a,
+        id: a.id || a.assessmentId || `att-${idx}`,
+        scorePercent: score,
+        percentage: score,
+        proficiencyResult: prof,
+        proficiency: prof,
+        correctAnswers: a.correctAnswers ?? a.correctCount ?? 4,
+        correctCount: a.correctCount ?? a.correctAnswers ?? 4,
+        totalQuestions: a.totalQuestions || 5,
+        assessmentTitle: a.assessmentTitle || a.title || 'Skill Assessment',
+        assessment: a.assessment || {
+          id: a.assessmentId,
+          slug: a.assessmentSlug,
+          title: a.title,
+          category: a.category
+        }
+      };
+    });
   },
   saveAssessmentAttempt(result) {
     const attempts = this.getAssessmentAttempts();
-    // remove previous attempt for the same assessment if present, keep best/latest
-    const filtered = attempts.filter((a) => a.assessmentSlug !== result.assessmentSlug);
-    filtered.unshift(result);
+    const normalized = {
+      ...result,
+      id: result.id || `att-${Date.now()}`,
+      scorePercent: result.scorePercent ?? result.percentage ?? 0,
+      percentage: result.percentage ?? result.scorePercent ?? 0,
+      proficiencyResult: result.proficiencyResult || result.proficiency || 'Intermediate',
+      proficiency: result.proficiency || result.proficiencyResult || 'Intermediate',
+      correctAnswers: result.correctAnswers ?? result.correctCount ?? 0,
+      correctCount: result.correctCount ?? result.correctAnswers ?? 0,
+      totalQuestions: result.totalQuestions || 5,
+      assessmentTitle: result.title || result.assessmentTitle || 'Skill Assessment',
+      completedAt: result.completedAt || new Date().toISOString(),
+      assessment: {
+        id: result.assessmentId,
+        slug: result.assessmentSlug,
+        title: result.title,
+        category: result.category
+      }
+    };
+
+    const filtered = attempts.filter((a) => a.assessmentSlug !== normalized.assessmentSlug);
+    filtered.unshift(normalized);
     writeStorage(STORAGE_KEYS.ASSESSMENT_ATTEMPTS, filtered);
     return filtered;
   },

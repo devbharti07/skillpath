@@ -78,7 +78,8 @@ What would you like to explore today?`,
       const botMsg = {
         id: `bot-${Date.now()}`,
         role: 'ASSISTANT',
-        content: res.message,
+        sender: 'assistant',
+        content: res.message || res.content,
         source: res.source
       };
       setMessages(prev => [...prev, botMsg]);
@@ -154,7 +155,7 @@ What would you like to explore today?`,
           </div>
         ) : (
           messages.map((msg) => {
-            const isUser = msg.role === 'USER';
+            const isUser = msg.role === 'USER' || msg.sender === 'user';
             return (
               <div
                 key={msg.id}

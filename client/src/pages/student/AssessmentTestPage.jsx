@@ -38,7 +38,7 @@ export default function AssessmentTestPage() {
         setLoading(true);
         const data = await api.getAssessment(slug);
         setAssessment(data);
-        setTimeLeft(data.durationMinutes * 60);
+        setTimeLeft((data?.durationMinutes || 10) * 60);
         setStartTime(Date.now());
       } catch (err) {
         console.error('Failed to load assessment:', err);
@@ -88,13 +88,14 @@ export default function AssessmentTestPage() {
 
       const res = await api.submitAssessment({
         assessmentId: assessment.id,
+        slug: assessment.slug,
         responses,
         timeSpentSeconds
       });
 
       setResults(res);
 
-      if (res.scorePercent >= 80) {
+      if ((res.scorePercent || res.percentage) >= 80) {
         confetti({
           particleCount: 80,
           spread: 70,
@@ -136,6 +137,14 @@ export default function AssessmentTestPage() {
 
   // RESULTS VIEW
   if (results) {
+    const score = results.scorePercent ?? results.percentage ?? 0;
+    const prof = results.proficiencyResult || results.proficiency || 'Intermediate';
+    const strongList = results.strongAreas || ['Core Conceptual Principles', 'Standard Syntax Flow'];
+    const practiceList = results.areasForImprovement || ['Edge-Case Optimization'];
+    const reviews = results.questionReview || results.review || [];
+    const roadmaps = results.recommendedRoadmaps || [];
+    const resources = results.recommendedResources || [];
+
     return (
       <div className="max-w-4xl mx-auto space-y-8 animate-fadeIn">
         {/* Results Hero Banner */}
@@ -151,18 +160,18 @@ export default function AssessmentTestPage() {
 
           <div className="space-y-1">
             <h1 className="text-4xl sm:text-5xl font-extrabold text-textMain-light dark:text-textMain-dark">
-              {results.scorePercent}%
+              {score}%
             </h1>
             <p className="text-sm font-bold text-textMain-light dark:text-textMain-dark">
-              Proficiency Rating: <span className="text-primary">{results.proficiencyResult}</span>
+              Proficiency Rating: <span className="text-primary">{prof}</span>
             </p>
             <p className="text-xs text-textMuted-light dark:text-textMuted-dark">
-              {results.correctAnswers} of {results.totalQuestions} questions answered correctly
+              {results.correctAnswers ?? results.correctCount ?? 0} of {results.totalQuestions || 5} questions answered correctly
             </p>
           </div>
 
           <p className="text-xs text-textMuted-light dark:text-textMuted-dark italic max-w-xl mx-auto pt-2">
-            "{results.disclaimer}"
+            "{results.disclaimer || 'Verified credentials remain active in your student profile.'}"
           </p>
         </div>
 
@@ -173,7 +182,7 @@ export default function AssessmentTestPage() {
               <CheckCircle2 className="w-4 h-4" /> Strong Competencies
             </h4>
             <ul className="text-xs space-y-1.5 text-textMain-light dark:text-textMain-dark">
-              {results.strongAreas.map((item, i) => (
+              {strongList.map((item, i) => (
                 <li key={i} className="flex items-start gap-2">
                   <span className="text-emerald-500">•</span>
                   <span>{item}</span>
@@ -187,7 +196,7 @@ export default function AssessmentTestPage() {
               <Zap className="w-4 h-4" /> Recommended Areas to Practice
             </h4>
             <ul className="text-xs space-y-1.5 text-textMain-light dark:text-textMain-dark">
-              {results.areasForImprovement.map((item, i) => (
+              {practiceList.map((item, i) => (
                 <li key={i} className="flex items-start gap-2">
                   <span className="text-amber-500">•</span>
                   <span>{item}</span>
@@ -198,66 +207,75 @@ export default function AssessmentTestPage() {
         </div>
 
         {/* Detailed Question Review with Explanations */}
-        <div className="glass-card p-6 sm:p-8 rounded-3xl space-y-6">
-          <h3 className="font-bold text-base text-textMain-light dark:text-textMain-dark">
-            Question Review & Educational Explanations
-          </h3>
+        {reviews.length > 0 && (
+          <div className="glass-card p-6 sm:p-8 rounded-3xl space-y-6">
+            <h3 className="font-bold text-base text-textMain-light dark:text-textMain-dark">
+              Question Review & Educational Explanations
+            </h3>
 
-          <div className="space-y-6">
-            {results.questionReview.map((qr, idx) => (
-              <div
-                key={qr.questionId}
-                className="p-5 rounded-2xl border border-borderBase-light dark:border-borderBase-dark space-y-3 bg-white dark:bg-slate-900"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <h5 className="font-bold text-sm text-textMain-light dark:text-textMain-dark">
-                    Question {idx + 1}: {qr.questionText}
-                  </h5>
-                  {qr.isCorrect ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-full flex-shrink-0">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Correct
-                    </span>
+            <div className="space-y-6">
+              {reviews.map((qr, idx) => (
+                <div
+                  key={qr.questionId || idx}
+                  className="p-5 rounded-2xl border border-borderBase-light dark:border-borderBase-dark space-y-3 bg-white dark:bg-slate-900"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <h5 className="font-bold text-sm text-textMain-light dark:text-textMain-dark">
+                      Question {idx + 1}: {qr.questionText}
+                    </h5>
+                    {qr.isCorrect ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-full flex-shrink-0">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Correct
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-red-600 bg-red-50 dark:bg-red-950 px-2 py-0.5 rounded-full flex-shrink-0">
+                        <XCircle className="w-3.5 h-3.5" /> Incorrect
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Options List */}
+                  {Array.isArray(qr.options) && qr.options.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                      {qr.options.map((opt) => {
+                        const isUserPick = opt.id === qr.selectedOptionId;
+                        const isActualCorrect = opt.isCorrect;
+
+                        let style = 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 text-textMuted-light dark:text-textMuted-dark';
+                        if (isActualCorrect) {
+                          style = 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 font-bold';
+                        } else if (isUserPick && !isActualCorrect) {
+                          style = 'border-red-400 bg-red-50 dark:bg-red-950/40 text-red-800 dark:text-red-200';
+                        }
+
+                        return (
+                          <div key={opt.id} className={`p-2.5 rounded-xl border text-xs flex items-center justify-between ${style}`}>
+                            <span>{opt.optionText}</span>
+                            {isActualCorrect && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
+                            {isUserPick && !isActualCorrect && <span className="text-[10px] text-red-500 font-bold">Your choice</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
                   ) : (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-red-600 bg-red-50 dark:bg-red-950 px-2 py-0.5 rounded-full flex-shrink-0">
-                      <XCircle className="w-3.5 h-3.5" /> Incorrect
-                    </span>
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 text-xs space-y-1">
+                      <p><strong className="text-textMuted-light dark:text-textMuted-dark">Your Answer:</strong> {qr.yourAnswer}</p>
+                      <p><strong className="text-emerald-600">Correct Answer:</strong> {qr.correctAnswer}</p>
+                    </div>
+                  )}
+
+                  {/* Explanation */}
+                  {qr.explanation && (
+                    <div className="p-3 rounded-xl bg-primary-50/60 dark:bg-primary-950/30 text-xs text-textMain-light dark:text-textMain-dark border border-primary-200 dark:border-primary-800">
+                      <strong className="text-primary block mb-0.5">Explanation:</strong>
+                      {qr.explanation}
+                    </div>
                   )}
                 </div>
-
-                {/* Options List */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                  {qr.options.map(opt => {
-                    const isUserPick = opt.id === qr.selectedOptionId;
-                    const isActualCorrect = opt.isCorrect;
-
-                    let style = 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 text-textMuted-light dark:text-textMuted-dark';
-                    if (isActualCorrect) {
-                      style = 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 font-bold';
-                    } else if (isUserPick && !isActualCorrect) {
-                      style = 'border-red-400 bg-red-50 dark:bg-red-950/40 text-red-800 dark:text-red-200';
-                    }
-
-                    return (
-                      <div key={opt.id} className={`p-2.5 rounded-xl border text-xs flex items-center justify-between ${style}`}>
-                        <span>{opt.optionText}</span>
-                        {isActualCorrect && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
-                        {isUserPick && !isActualCorrect && <span className="text-[10px] text-red-500 font-bold">Your choice</span>}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Explanation */}
-                {qr.explanation && (
-                  <div className="p-3 rounded-xl bg-primary-50/60 dark:bg-primary-950/30 text-xs text-textMain-light dark:text-textMain-dark border border-primary-200 dark:border-primary-800">
-                    <strong className="text-primary block mb-0.5">Explanation:</strong>
-                    {qr.explanation}
-                  </div>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Recommended Next Roadmaps & Resources */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -265,7 +283,7 @@ export default function AssessmentTestPage() {
             <h4 className="text-xs font-bold text-textMain-light dark:text-textMain-dark uppercase tracking-wider flex items-center gap-1.5">
               <Map className="w-4 h-4 text-primary" /> Recommended Next Roadmap
             </h4>
-            {results.recommendedRoadmaps.slice(0, 1).map(r => (
+            {roadmaps.slice(0, 1).map(r => (
               <div key={r.id} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 space-y-1">
                 <div className="font-bold text-xs text-textMain-light dark:text-textMain-dark">{r.title}</div>
                 <p className="text-[10px] text-textMuted-light dark:text-textMuted-dark">{r.level} • {r.durationWeeks} Weeks</p>
@@ -280,7 +298,7 @@ export default function AssessmentTestPage() {
             <h4 className="text-xs font-bold text-textMain-light dark:text-textMain-dark uppercase tracking-wider flex items-center gap-1.5">
               <BookOpen className="w-4 h-4 text-secondary" /> Learning Material
             </h4>
-            {results.recommendedResources.slice(0, 2).map(res => (
+            {resources.slice(0, 2).map(res => (
               <a
                 key={res.id}
                 href={res.url}
@@ -302,7 +320,7 @@ export default function AssessmentTestPage() {
               setResults(null);
               setAnswers({});
               setCurrentQIndex(0);
-              setTimeLeft(assessment.durationMinutes * 60);
+              setTimeLeft((assessment?.durationMinutes || 10) * 60);
               setStartTime(Date.now());
             }}
             className="px-6 py-2.5 rounded-xl text-xs font-bold border border-borderBase-light dark:border-borderBase-dark text-textMain-light dark:text-textMain-dark hover:bg-slate-100 flex items-center gap-1.5"
@@ -322,7 +340,6 @@ export default function AssessmentTestPage() {
 
   // ACTIVE QUIZ INTERFACE
   const currentQuestion = assessment.questions[currentQIndex];
-  const isAnswered = Boolean(answers[currentQuestion?.id]);
   const totalQuestions = assessment.questions.length;
   const answeredCount = Object.keys(answers).length;
 
@@ -367,73 +384,75 @@ export default function AssessmentTestPage() {
       </div>
 
       {/* Main Question Card */}
-      <div className="glass-card rounded-3xl p-6 sm:p-8 space-y-6 border border-borderBase-light dark:border-borderBase-dark">
-        <div className="flex items-center justify-between text-xs text-textMuted-light dark:text-textMuted-dark pb-2 border-b border-borderBase-light dark:border-borderBase-dark">
-          <span>Question {currentQIndex + 1} of {totalQuestions}</span>
-          <span>Answered {answeredCount}/{totalQuestions}</span>
-        </div>
+      {currentQuestion && (
+        <div className="glass-card rounded-3xl p-6 sm:p-8 space-y-6 border border-borderBase-light dark:border-borderBase-dark">
+          <div className="flex items-center justify-between text-xs text-textMuted-light dark:text-textMuted-dark pb-2 border-b border-borderBase-light dark:border-borderBase-dark">
+            <span>Question {currentQIndex + 1} of {totalQuestions}</span>
+            <span>Answered {answeredCount}/{totalQuestions}</span>
+          </div>
 
-        <h3 className="text-lg font-bold text-textMain-light dark:text-textMain-dark leading-snug">
-          {currentQuestion.questionText}
-        </h3>
+          <h3 className="text-lg font-bold text-textMain-light dark:text-textMain-dark leading-snug">
+            {currentQuestion.questionText || currentQuestion.text}
+          </h3>
 
-        {/* Options */}
-        <div className="space-y-3">
-          {currentQuestion.options.map((opt) => {
-            const isSelected = answers[currentQuestion.id] === opt.id;
+          {/* Options */}
+          <div className="space-y-3">
+            {(currentQuestion.options || []).map((opt) => {
+              const isSelected = answers[currentQuestion.id] === opt.id;
 
-            return (
+              return (
+                <button
+                  type="button"
+                  key={opt.id}
+                  onClick={() => handleSelectOption(currentQuestion.id, opt.id)}
+                  className={`w-full p-4 rounded-2xl border text-left text-xs sm:text-sm font-medium transition-all flex items-center justify-between ${
+                    isSelected
+                      ? 'border-primary bg-primary-50 dark:bg-primary-950/40 text-primary font-bold shadow-sm'
+                      : 'border-borderBase-light dark:border-borderBase-dark hover:border-primary/40 bg-white dark:bg-slate-900 text-textMain-light dark:text-textMain-dark'
+                  }`}
+                >
+                  <span>{opt.optionText || opt.text}</span>
+                  <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                    isSelected ? 'border-primary bg-primary' : 'border-slate-300 dark:border-slate-600'
+                  }`}>
+                    {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Nav Buttons */}
+          <div className="pt-4 border-t border-borderBase-light dark:border-borderBase-dark flex items-center justify-between">
+            <button
+              type="button"
+              disabled={currentQIndex === 0}
+              onClick={() => setCurrentQIndex(currentQIndex - 1)}
+              className="px-4 py-2 rounded-xl text-xs font-semibold border border-borderBase-light dark:border-borderBase-dark text-textMain-light dark:text-textMain-dark disabled:opacity-40 flex items-center gap-1.5"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" /> Previous
+            </button>
+
+            {currentQIndex < totalQuestions - 1 ? (
               <button
                 type="button"
-                key={opt.id}
-                onClick={() => handleSelectOption(currentQuestion.id, opt.id)}
-                className={`w-full p-4 rounded-2xl border text-left text-xs sm:text-sm font-medium transition-all flex items-center justify-between ${
-                  isSelected
-                    ? 'border-primary bg-primary-50 dark:bg-primary-950/40 text-primary font-bold shadow-sm'
-                    : 'border-borderBase-light dark:border-borderBase-dark hover:border-primary/40 bg-white dark:bg-slate-900 text-textMain-light dark:text-textMain-dark'
-                }`}
+                onClick={() => setCurrentQIndex(currentQIndex + 1)}
+                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-700 shadow-md shadow-primary/20 flex items-center gap-1.5"
               >
-                <span>{opt.optionText}</span>
-                <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                  isSelected ? 'border-primary bg-primary' : 'border-slate-300 dark:border-slate-600'
-                }`}>
-                  {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                </div>
+                Next <ArrowRight className="w-3.5 h-3.5" />
               </button>
-            );
-          })}
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmModalOpen(true)}
+                className="px-6 py-2.5 rounded-xl text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/25 flex items-center gap-1.5"
+              >
+                <CheckCircle2 className="w-4 h-4" /> Submit Assessment
+              </button>
+            )}
+          </div>
         </div>
-
-        {/* Nav Buttons */}
-        <div className="pt-4 border-t border-borderBase-light dark:border-borderBase-dark flex items-center justify-between">
-          <button
-            type="button"
-            disabled={currentQIndex === 0}
-            onClick={() => setCurrentQIndex(currentQIndex - 1)}
-            className="px-4 py-2 rounded-xl text-xs font-semibold border border-borderBase-light dark:border-borderBase-dark text-textMain-light dark:text-textMain-dark disabled:opacity-40 flex items-center gap-1.5"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" /> Previous
-          </button>
-
-          {currentQIndex < totalQuestions - 1 ? (
-            <button
-              type="button"
-              onClick={() => setCurrentQIndex(currentQIndex + 1)}
-              className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-700 shadow-md shadow-primary/20 flex items-center gap-1.5"
-            >
-              Next <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setConfirmModalOpen(true)}
-              className="px-6 py-2.5 rounded-xl text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/25 flex items-center gap-1.5"
-            >
-              <CheckCircle2 className="w-4 h-4" /> Submit Assessment
-            </button>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Confirmation Modal */}
       {confirmModalOpen && (

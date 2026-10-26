@@ -61,11 +61,13 @@ export default function CareerExplorerPage() {
   };
 
   const filtered = careers.filter(c => {
-    const matchesSearch = c.title.toLowerCase().includes(search.toLowerCase()) ||
-      c.description.toLowerCase().includes(search.toLowerCase()) ||
-      c.technicalSkills.some(s => s.toLowerCase().includes(search.toLowerCase()));
+    const skills = c.requiredSkills || c.technicalSkills || [];
+    const matchesSearch = (c.title || '').toLowerCase().includes(search.toLowerCase()) ||
+      (c.description || '').toLowerCase().includes(search.toLowerCase()) ||
+      skills.some(s => s.toLowerCase().includes(search.toLowerCase()));
     const matchesCategory = selectedCategory === 'ALL' || c.category === selectedCategory;
-    const matchesDiff = selectedDifficulty === 'ALL' || c.difficulty.toLowerCase().includes(selectedDifficulty.toLowerCase());
+    const diff = (c.difficulty || c.level || '').toLowerCase();
+    const matchesDiff = selectedDifficulty === 'ALL' || diff.includes(selectedDifficulty.toLowerCase());
     return matchesSearch && matchesCategory && matchesDiff;
   });
 
@@ -151,6 +153,8 @@ export default function CareerExplorerPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map(career => {
             const isComparing = compareList.includes(career.slug);
+            const skills = career.requiredSkills || career.technicalSkills || [];
+            const displayLevel = career.difficulty || career.level || 'All Levels';
 
             return (
               <div
@@ -186,14 +190,14 @@ export default function CareerExplorerPage() {
                       Key Required Skills:
                     </span>
                     <div className="flex flex-wrap gap-1.5">
-                      {career.technicalSkills.slice(0, 4).map(skill => (
+                      {skills.slice(0, 4).map(skill => (
                         <span key={skill} className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                           {skill}
                         </span>
                       ))}
-                      {career.technicalSkills.length > 4 && (
+                      {skills.length > 4 && (
                         <span className="text-[10px] text-textMuted-light dark:text-textMuted-dark self-center">
-                          +{career.technicalSkills.length - 4} more
+                          +{skills.length - 4} more
                         </span>
                       )}
                     </div>
@@ -202,10 +206,10 @@ export default function CareerExplorerPage() {
                   <div className="flex items-center gap-4 text-xs text-textMuted-light dark:text-textMuted-dark pt-2 border-t border-borderBase-light dark:border-borderBase-dark">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5 text-slate-400" />
-                      ~{career.estimatedLearningWeeks} Weeks
+                      ~{career.estimatedLearningWeeks || 24} Weeks
                     </span>
                     <span className="text-xs font-semibold">
-                      {career.difficulty}
+                      {displayLevel}
                     </span>
                   </div>
                 </div>
